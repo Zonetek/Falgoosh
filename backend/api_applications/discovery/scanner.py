@@ -1,6 +1,8 @@
 import ipaddress
+import time
 
-import pika
+import masscan_worker
+import port_scanner
 
 
 def generate_public_ipv4_ranges_stream(cidr_prefix=24):
@@ -17,17 +19,14 @@ def generate_public_ipv4_ranges_stream(cidr_prefix=24):
 
 
 def main():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq"))
-    channel = connection.channel()
-    channel.queue_declare(queue="public_ip_ranges", durable=True)
-
     for ip_range in generate_public_ipv4_ranges_stream(24):
-        channel.basic_publish(
-            exchange="",
-            routing_key="public_ip_ranges",
-            body=ip_range.encode("utf-8"),
-            properties=pika.BasicProperties(delivery_mode=2),
-        )
-        print(f"Sent: {ip_range}")
+        print(f"Scanning: {ip_range}")
+        result = port_scanner.call_ip_range(ip_range)
+        print(result)
 
-    connection.close()
+    print("Finished one full scan of IPv4 ranges. Sleeping for 24 hours.")
+    time.sleep(86400)
+
+
+if __name__ == "__main__":
+    main()

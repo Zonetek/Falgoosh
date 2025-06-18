@@ -5,6 +5,7 @@ from .models import UserProfile
 
 User = get_user_model()
 
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     """
@@ -13,10 +14,11 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
 
+
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """
     Save the UserProfile instance when the User is saved.
     """
-    if hasattr(instance, 'userprofile'):
+    if hasattr(instance, "userprofile"):
         instance.userprofile.save()

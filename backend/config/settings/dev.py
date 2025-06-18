@@ -36,7 +36,7 @@ DATABASES = {
 }
 
 # Testing configuration
-TESTING = sys.argv[1:2] == ['test']
+TESTING = sys.argv[1:2] == ["test"]
 
 # Debug toolbar settings - only if not testing
 if not TESTING:

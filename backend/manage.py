@@ -9,9 +9,9 @@ def main():
     """Run administrative tasks."""
     backend_dir = Path(__file__).resolve().parent
     sys.path.append(str(backend_dir))
-    sys.path.append(str(backend_dir / 'modules'))
+    sys.path.append(str(backend_dir / "modules"))
 
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.dev')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -23,5 +23,5 @@ def main():
     execute_from_command_line(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
