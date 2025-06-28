@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY requirements/base.txt ./requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 COPY api_applications/discovery/ .
 

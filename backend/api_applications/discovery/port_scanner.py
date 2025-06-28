@@ -1,4 +1,5 @@
 import ipaddress
+import json
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -13,7 +14,7 @@ except KeyboardInterrupt:
     sys.exit(0)
 
 
-def scan_ports(ip, ports=range(1024)):
+def scan_ports(ip, ports):
     packets = [IP(dst=ip) / TCP(dport=port, flags="S") for port in ports]
     answers, _ = sr(packets, timeout=5, verbose=0)
     open_ports = []
@@ -38,3 +39,12 @@ def call_ip_range(ip):
             if open_ports:
                 result[ip] = open_ports
                 print(f"{ip}: {open_ports}")
+                yield ip, open_ports
+        print(futures)
+
+
+def custom_ip(ip, ports=range(1024)):
+    result = {}
+    open_ports = scan_ports(ip, ports)
+    result[open_ports[0]] = open_ports[1]
+    return result
