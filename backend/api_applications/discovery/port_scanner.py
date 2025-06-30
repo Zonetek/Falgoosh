@@ -1,9 +1,9 @@
 import ipaddress
-import json
-import time
+
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import yaml
+import os
 
 try:
     from scapy.all import IP, TCP, sr
@@ -27,7 +27,8 @@ def scan_ports(ip, ports):
 def call_ip_range(ip):
     result = {}
     ips = [str(ip) for ip in ipaddress.ip_network(ip)]
-    with open("ports.yaml") as f:
+    yaml_path = os.path.join(os.path.dirname(__file__), "ports.yaml")
+    with open(yaml_path) as f:
         data = yaml.safe_load(f)
     ports = [item["port"] for item in data["wellknown_ports"]]
 
@@ -40,7 +41,6 @@ def call_ip_range(ip):
                 result[ip] = open_ports
                 print(f"{ip}: {open_ports}")
                 yield ip, open_ports
-        print(futures)
 
 
 def custom_ip(ip, ports=range(1024)):

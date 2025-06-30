@@ -2,8 +2,8 @@ import ipaddress
 import logging
 import time
 
-import port_scanner
-from db_operations import insert_scan_result
+from discovery import port_scanner
+from discovery import db_operations
 
 
 def generate_public_ipv4_ranges_stream(cidr_prefix=24):
@@ -25,7 +25,7 @@ def main():
         result = port_scanner.call_ip_range(ip_range)
         print(f"this is the result{result}")
         for ip, ports in result:
-            inserted_id = insert_scan_result({ip: ports})
+            inserted_id = db_operations.insert_scan_result({'ip': ip , 'ports' : ports})
             if inserted_id:
                 logging.info(
                     f"Successfully inserted scan result for {ip_range} with ID: {inserted_id}"

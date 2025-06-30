@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: ./docker/discovery.Dockerfile
     container_name: scanner
-    command: python scanner.py
+    command: python -m discovery.scanner
     restart: on-failure
     networks:
       - mynetwork
@@ -33,6 +33,26 @@ services:
       - NET_ADMIN
     depends_on:
       - mongodb
+    working_dir: /app/api_applications
+
+  banner_grabbing:
+    build:
+      context: .
+      dockerfile: ./docker/banner_grabbing.Dockerfile
+    container_name: banner_grabbing
+    command: python -m banner_grabbing.main
+    restart: on-failure
+    networks:
+      - mynetwork
+    env_file:
+      - .env
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    depends_on:
+      - mongodb
+    working_dir: /app/api_applications
+
 
 networks:
   mynetwork:
