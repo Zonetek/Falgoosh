@@ -24,7 +24,7 @@ def update_enrichment():
             )
         return f"{len(results)} updated"
     except Exception as e:
-        print(f"Operation do not complete : {e}")
+        logging.info(f"Operation do not complete : {e}")
         return None
 
 
@@ -33,7 +33,7 @@ def update_banners():
         db = monogo_connections.connect_monogo()
         results = list(db.scan_results.find({"banners": {"$exists": False}}))
     except Exception as e:
-        print(f"Operation do not complete : {e}")
+        logging.info(f"Operation do not complete : {e}")
         return None
     for i in results:
         banner = banner_grabber.scan_ports_for_banners(i["ip"], i["ports"])

@@ -1,7 +1,7 @@
 import ipaddress
 import logging
 import time
-
+from datetime import datetime
 from discovery import port_scanner
 from discovery import db_operations
 
@@ -25,7 +25,8 @@ def main():
         result = port_scanner.call_ip_range(ip_range)
         print(f"this is the result{result}")
         for ip, ports in result:
-            inserted_id = db_operations.insert_scan_result({'ip': ip , 'ports' : ports})
+            now = datetime.now()
+            inserted_id = db_operations.insert_scan_result({'ip': ip , 'ports' : ports, 'last_update':now})
             if inserted_id:
                 logging.info(
                     f"Successfully inserted scan result for {ip_range} with ID: {inserted_id}"

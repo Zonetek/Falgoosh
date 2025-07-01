@@ -28,7 +28,6 @@ def os_finger_print(target, arguments="-O"):
 
 def isp_lookup(ip):
     resp = requests.get(f"http://ip-api.com/json/{ip}").json()
-    print(resp)
     return {
         "geo": {
             "country": resp["country"],

@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 WORKDIR /app
 
-COPY requirements/base.txt ./requirements.txt
+COPY requirements/scanner.txt ./requirements.txt
 
 RUN apt-get update && apt-get install -y nmap && rm -rf /var/lib/apt/lists/*
 

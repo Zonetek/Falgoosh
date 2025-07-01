@@ -13,7 +13,6 @@ def get_banner(target_ip, target_port):
 
         banner_data = ""
 
-        # --- Port-specific handling for common services ---
 
         if target_port == 22:  # SSH
             sock.connect((target_ip, target_port))
