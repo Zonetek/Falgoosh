@@ -13,7 +13,6 @@ def get_banner(target_ip, target_port):
 
         banner_data = ""
 
-
         if target_port == 22:  # SSH
             sock.connect((target_ip, target_port))
             banner_data = sock.recv(1024).decode("utf-8", errors="ignore")
@@ -103,15 +102,15 @@ def get_banner(target_ip, target_port):
                 return "No identifiable banner received for generic port."
 
     except socket.timeout:
-        return f"Error: Timeout occurred while connecting to {target_ip}:{target_port} or receiving data."
+        return None
     except ConnectionRefusedError:
-        return f"Error: Connection to {target_ip}:{target_port} refused. Port might be closed or firewall blocked."
+        return None
     except ssl.SSLError as e:
-        return f"Error: SSL error on {target_ip}:{target_port} - {e}. This might indicate a non-SSL service on an SSL port, or a certificate issue."
+        return None
     except socket.error as e:
-        return f"Error: Socket error on {target_ip}:{target_port} - {e}"
+        return None
     except Exception as e:
-        return f"Error: An unexpected error occurred on {target_ip}:{target_port} - {e}"
+        return None
     finally:
         if sock:
             sock.close()
@@ -123,5 +122,6 @@ def scan_ports_for_banners(target_ip, ports_list):
     for port in ports_list:
         logging.info(f"Scanning port {port}...")
         banner = get_banner(target_ip, port)
-        results[port] = banner
+        if banner:
+            results[port] = banner
     return str(results)

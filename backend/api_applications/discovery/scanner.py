@@ -1,9 +1,14 @@
 import ipaddress
 import logging
+import threading
 import time
 from datetime import datetime
-from discovery import port_scanner
-from discovery import db_operations
+
+from discovery import db_operations, port_scanner
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 
 def generate_public_ipv4_ranges_stream(cidr_prefix=24):
@@ -19,22 +24,53 @@ def generate_public_ipv4_ranges_stream(cidr_prefix=24):
             yield str(subnet)
 
 
-def main():
-    for ip_range in generate_public_ipv4_ranges_stream(24):
-        print(f"Scanning: {ip_range}")
-        result = port_scanner.call_ip_range(ip_range)
-        print(f"this is the result{result}")
-        for ip, ports in result:
-            now = datetime.now()
-            inserted_id = db_operations.insert_scan_result({'ip': ip , 'ports' : ports, 'last_update':now})
-            if inserted_id:
-                logging.info(
-                    f"Successfully inserted scan result for {ip_range} with ID: {inserted_id}"
+def daily_scan():
+    while True:
+        for ip_range in generate_public_ipv4_ranges_stream(24):
+            logging.info(f"Scanning: {ip_range}")
+            result = port_scanner.call_ip_range(ip_range)
+            for ip, ports in result:
+                now = datetime.now()
+                if db_operations.is_exists(ip):
+                    logging.info(f"{ip} is already exists")
+                    db_operations.update_scan_result(
+                        {"ip": ip, "ports": ports, "last_update": now}
+                    )
+                else:
+                    inserted_id = db_operations.insert_scan_result(
+                        {"ip": ip, "ports": ports, "last_update": now}
+                    )
+                    if inserted_id:
+                        logging.info(
+                            f"Successfully inserted scan result for {ip} with ID: {inserted_id}"
+                        )
+        logging.info("Finished one full scan of IPv4 ranges. Sleeping for 24 hours.")
+        time.sleep(86400)
+
+
+def rescan_unresponsive():
+    while True:
+        down_ips = db_operations.find_down_ips()
+        if down_ips:
+            for i in db_operations.find_down_ips():
+                result = port_scanner.scan_ports(i["ip"])
+                now = datetime.now()
+                db_operations.update_scan_result(
+                    {"ip": result[0], "ports": result[1], "last_update": now}
                 )
 
-    print("Finished one full scan of IPv4 ranges. Sleeping for 24 hours.")
-    time.sleep(86400)
+            logging.info("Sleeping for 1 hour")
+            time.sleep(3600)
+        else:
+            time.sleep(40)
 
 
 if __name__ == "__main__":
-    main()
+    db_operations.check_connection()
+    t1 = threading.Thread(target=daily_scan, name="DailyScanThread")
+    t2 = threading.Thread(target=rescan_unresponsive, name="RescanUnresponsiveThread")
+
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()

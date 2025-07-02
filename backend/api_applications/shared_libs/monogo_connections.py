@@ -1,3 +1,4 @@
+import logging
 import os
 from urllib.parse import quote_plus
 
@@ -14,6 +15,10 @@ MONGO_AUTH_DB = os.getenv("MONGO_AUTH_DB")
 _client = None
 _db = None
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+
 
 def connect_monogo():
     global _client, _db
@@ -28,23 +33,32 @@ def connect_monogo():
             _client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
             _client.admin.command("ping")
             _db = _client[MONGO_DB_NAME]
-            print(
+            logging.info(
                 f"[db_operation.py] Connected to MongoDB at {MONGO_HOST}:{MONGO_PORT}, DB={MONGO_DB_NAME}"
             )
         except ConnectionFailure as e:
-            print(f"[db_operation.py] ERROR: Could not connect to MongoDB: {e}")
+            logging.info(f"[db_operation.py] ERROR: Could not connect to MongoDB: {e}")
             _client = None
             raise
         except OperationFailure as e:
-            print(
+            logging.info(
                 f"[db_operation.py] ERROR: MongoDB operation/authentication failed: {e}"
             )
             _client = None
             raise
         except Exception as e:
-            print(
+            logging.info(
                 f"[db_operation.py] ERROR: Unexpected exception on MongoDB connection: {e}"
             )
             _client = None
             raise
     return _db
+
+
+def close_db_connection():
+
+    global _client
+    if _client:
+        _client.close()
+        logging.info("[db_operation.py] MongoDB connection closed.")
+        _client = None
