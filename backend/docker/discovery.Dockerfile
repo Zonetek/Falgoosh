@@ -7,4 +7,3 @@ RUN pip install -r requirements.txt
 COPY api_applications/ ./api_applications/
 
 WORKDIR /app/api_applications
-
