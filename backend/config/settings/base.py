@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "api_applications.activity_logging.apps.ActivityLoggingConfig",
     "api_applications.sessions_management.apps.SessionsManagementConfig",
     "api_applications.admin_tools.apps.AdminToolsConfig",
+    "api_applications.shared_models.apps.SharedModelsConfig",
 ]
 
 MIDDLEWARE = [
