@@ -35,7 +35,7 @@ def is_exists(data: str):
     try:
 
         db = monogo_connections.connect_monogo()
-        result = db.scan_results.find_one({"ip": data})
+        result = db.scan_results.find_one({"_id": data})
         logging.info(f"in db_operation {result}")
         return result is not None
     except Exception as e:
@@ -48,7 +48,7 @@ def update_scan_result(data: dict):
         db = monogo_connections.connect_monogo()
         logging.info(f"the data in update is {data}")
         result = db.scan_results.update_one(
-            {"ip": data["ip"]},
+            {"_id": data["_id"]},
             {"$set": {"ports": data["ports"], "last_update": data["last_update"]}},
             {
                 "$unset": {

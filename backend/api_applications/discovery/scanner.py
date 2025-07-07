@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 
 from discovery import db_operations, port_scanner
+from discovery.schema import ScanResult
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -33,12 +34,14 @@ def daily_scan():
                 now = datetime.now()
                 if db_operations.is_exists(ip):
                     logging.info(f"{ip} is already exists")
+                    scan_result = ScanResult(_id=ip, ports=ports, last_update=now)
                     db_operations.update_scan_result(
-                        {"ip": ip, "ports": ports, "last_update": now}
+                        scan_result.dict(by_alias=True, exclude_none=True)
                     )
                 else:
+                    scan_result = ScanResult(_id=ip, ports=ports, last_update=now)
                     inserted_id = db_operations.insert_scan_result(
-                        {"ip": ip, "ports": ports, "last_update": now}
+                        scan_result.dict(by_alias=True, exclude_none=True)
                     )
                     if inserted_id:
                         logging.info(
@@ -53,10 +56,13 @@ def rescan_unresponsive():
         down_ips = db_operations.find_down_ips()
         if down_ips:
             for i in db_operations.find_down_ips():
-                result = port_scanner.scan_ports(i["ip"])
+                result = port_scanner.scan_ports(i["_id"])
                 now = datetime.now()
+                scan_result = ScanResult(
+                    _id=result[0], ports=result[1], last_update=now
+                )
                 db_operations.update_scan_result(
-                    {"ip": result[0], "ports": result[1], "last_update": now}
+                    scan_result.dict(by_alias=True, exclude_none=True)
                 )
 
             logging.info("Sleeping for 1 hour")

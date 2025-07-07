@@ -1,6 +1,5 @@
 import socket
 
-import geocoder
 import nmap
 import requests
 
