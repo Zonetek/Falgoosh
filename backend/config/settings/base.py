@@ -74,7 +74,7 @@ SITE_ID = 1
 
 ROOT_URLCONF = "config.urls"
 
-AUTH_USER_MODEL = "accounts.CustomUser"
+AUTH_USER_MODEL = 'shared_models.CustomUser'
 
 TEMPLATES = [
     {
