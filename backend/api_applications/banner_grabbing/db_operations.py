@@ -12,14 +12,14 @@ def update_enrichment():
 
         for i in results:
             logging.info(f"getting OS finger print of : {i}")
-            f_p = enrichment.os_finger_print(i["ip"])
-            g_l = enrichment.isp_lookup(i["ip"])
-            domain = enrichment.get_domain(i["ip"])
+            f_p = enrichment.os_finger_print(i["_id"])
+            g_l = enrichment.isp_lookup(i["_id"])
+            domain = enrichment.get_domain(i["_id"])
             logging.info(
-                f"Updating {i['ip']} with f_p={f_p}, g_l={g_l}, domain={domain}"
+                f"Updating {i['_id']} with f_p={f_p}, g_l={g_l}, domain={domain}"
             )
             db.scan_results.update_one(
-                {"ip": i["ip"]},
+                {"_id": i["_id"]},
                 {"$set": {"finger_print": f_p, "general": g_l, "domain": domain}},
             )
         return f"{len(results)} updated"
@@ -31,11 +31,14 @@ def update_enrichment():
 def update_banners():
     try:
         db = monogo_connections.connect_monogo()
-        results = list(db.scan_results.find({"banners": {"$exists": False}}))
+        results = list(db.scan_results.find({"service_type": {"$exists": False}}))
     except Exception as e:
         logging.info(f"Operation do not complete : {e}")
         return None
     for i in results:
-        banner = banner_grabber.scan_ports_for_banners(i["ip"], i["ports"])
+        banner = banner_grabber.scan_ports_for_banners(i["_id"], i["ports"])
+        logging.info(f"Updating banner, result is: {banner}")
         logging.info(f"getting SERVICE TYPE of : {i}")
-        db.scan_results.update_one({"ip": i["ip"]}, {"$set": {"service_type": banner}})
+        db.scan_results.update_one(
+            {"_id": i["_id"]}, {"$set": {"service_type": banner}}
+        )
