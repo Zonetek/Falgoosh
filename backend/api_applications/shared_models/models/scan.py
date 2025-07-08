@@ -13,6 +13,16 @@ class Scan(models.Model):
     target_ports = models.TextField(help_text="Comma-separated port numbers or ranges")
     scan_type = models.CharField(max_length=50, default='tcp_scan')
     status = models.CharField(max_length=20, choices=SCAN_STATUS_CHOICES, default='pending')
+
+    country = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    region = models.CharField(max_length=100, blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+    domain = models.CharField(max_length=255, blank=True, null=True)
+    organization = models.CharField(max_length=255, blank=True, null=True)
+    isp = models.CharField(max_length=255, blank=True, null=True)
+    asn = models.CharField(max_length=100, blank=True, null=True)
     
     mongo_object_id = models.CharField(max_length=24, blank=True, null=True, help_text="MongoDB ObjectId for scan results")
     
@@ -28,6 +38,8 @@ class Scan(models.Model):
         indexes = [
             models.Index(fields=['user', 'target_ip']),
             models.Index(fields=['mongo_object_id']),
+            models.Index(fields=['country', 'city']),  
+            models.Index(fields=['organization']),      
         ]
     
     def __str__(self):
