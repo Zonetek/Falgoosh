@@ -3,7 +3,7 @@ from django.contrib.auth.models import update_last_login
 from config.settings.base import UPDATE_LAST_LOGIN
 import uuid
 from rest_framework import serializers
-from .models import CustomUser, UserProfile
+from api_applications.shared_models.models import CustomUser, UserProfile
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
