@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/Zonetek/Falgoosh/compare/falgoosh-v0.1.0...falgoosh-v0.2.0) (2025-07-09)
+
+
+### Features
+
+* discovery service ([#10](https://github.com/Zonetek/Falgoosh/issues/10)) ([9cfaddc](https://github.com/Zonetek/Falgoosh/commit/9cfaddcd5675d19e247c1ece8f263f8e84262113))
+* **models:** create shared_models app, move User model, add base Scan model ([#18](https://github.com/Zonetek/Falgoosh/issues/18)) ([0b42a06](https://github.com/Zonetek/Falgoosh/commit/0b42a0691e8592b3d13f2202dbd83fee00b70f36))
+
+
+### Bug Fixes
+
+* ensure 'last_update' reflects exact time in database operations ([acbf5fe](https://github.com/Zonetek/Falgoosh/commit/acbf5fe676fae3b213502c36ca31d7a09968d113))
+
 ## 0.1.0 (2025-06-13)
 
 
