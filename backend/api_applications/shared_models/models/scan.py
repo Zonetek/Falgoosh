@@ -1,5 +1,6 @@
 from django.db import models
 from api_applications.shared_models.models import CustomUser, UserProfile
+from django.conf import settings
 class Scan(models.Model):
     SCAN_STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -8,7 +9,7 @@ class Scan(models.Model):
         ('failed', 'Failed'),
     ]
     
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='scans')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='scans')
     target_ip = models.GenericIPAddressField()
     target_ports = models.TextField(help_text="Comma-separated port numbers or ranges")
     scan_type = models.CharField(max_length=50, default='tcp_scan')
@@ -44,3 +45,52 @@ class Scan(models.Model):
     
     def __str__(self):
         return f"Scan {self.id} - {self.target_ip} - {self.user.username}"
+    
+    @property
+    def location_display(self):
+        location_parts = []
+        if self.city:
+            location_parts.append(self.city)
+        if self.region:
+            location_parts.append(self.region)
+        if self.country:
+            location_parts.append(self.country)
+        return ', '.join(location_parts) if location_parts else 'Unknown'
+    
+    @property
+    def has_geographic_data(self):
+        return bool(self.latitude and self.longitude)
+     
+    def get_port_count(self):
+        """Calculate number of ports to scan"""
+        if not self.target_ports:
+            return 0
+        
+        total = 0
+        ports = self.target_ports.split(',')
+        for port in ports:
+            port = port.strip()
+            if '-' in port:
+                try:
+                    start, end = map(int, port.split('-'))
+                    total += (end - start + 1)
+                except ValueError:
+                    continue
+            else:
+                try:
+                    int(port)
+                    total += 1
+                except ValueError:
+                    continue
+        return total
+    
+class ScanHistory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='scan_history')
+    scan = models.ForeignKey(Scan, on_delete=models.CASCADE)
+    action = models.CharField(max_length=50)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(default=dict)
+    
+    class Meta:
+        ordering = ['-timestamp']
+
