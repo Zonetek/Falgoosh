@@ -57,9 +57,32 @@ class Scan(models.Model):
             location_parts.append(self.country)
         return ', '.join(location_parts) if location_parts else 'Unknown'
     
-
+    @property
     def has_geographic_data(self):
         return bool(self.latitude and self.longitude)
+     
+    def get_port_count(self):
+        """Calculate number of ports to scan"""
+        if not self.target_ports:
+            return 0
+        
+        total = 0
+        ports = self.target_ports.split(',')
+        for port in ports:
+            port = port.strip()
+            if '-' in port:
+                try:
+                    start, end = map(int, port.split('-'))
+                    total += (end - start + 1)
+                except ValueError:
+                    continue
+            else:
+                try:
+                    int(port)
+                    total += 1
+                except ValueError:
+                    continue
+        return total
     
 class ScanHistory(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='scan_history')
