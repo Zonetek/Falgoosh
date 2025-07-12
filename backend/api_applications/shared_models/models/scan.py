@@ -44,3 +44,20 @@ class Scan(models.Model):
     
     def __str__(self):
         return f"Scan {self.id} - {self.target_ip} - {self.user.username}"
+    
+    @property
+    def location_display(self):
+        location_parts = []
+        if self.city:
+            location_parts.append(self.city)
+        if self.region:
+            location_parts.append(self.region)
+        if self.country:
+            location_parts.append(self.country)
+        return ', '.join(location_parts) if location_parts else 'Unknown'
+    
+
+    def has_geographic_data(self):
+        return bool(self.latitude and self.longitude)
+    
+    
