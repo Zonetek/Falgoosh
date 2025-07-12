@@ -123,5 +123,5 @@ def scan_ports_for_banners(target_ip, ports_list):
         logging.info(f"Scanning port {port}...")
         banner = get_banner(target_ip, port)
         if banner:
-            results[port] = banner
-    return str(results)
+            results[str(port)] = banner
+    return results

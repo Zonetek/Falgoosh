@@ -59,7 +59,7 @@ def update_scan_result(data: dict):
                 }
             },
         )
-        return result.upserted_id
+        return True
     except Exception as e:
         logging.info(f"[db_operation.py] ERROR: Failed to update data : {e}")
         return None
