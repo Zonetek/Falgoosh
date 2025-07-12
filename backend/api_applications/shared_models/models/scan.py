@@ -1,5 +1,6 @@
 from django.db import models
 from api_applications.shared_models.models import CustomUser, UserProfile
+from django.conf import settings
 class Scan(models.Model):
     SCAN_STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -8,7 +9,7 @@ class Scan(models.Model):
         ('failed', 'Failed'),
     ]
     
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='scans')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='scans')
     target_ip = models.GenericIPAddressField()
     target_ports = models.TextField(help_text="Comma-separated port numbers or ranges")
     scan_type = models.CharField(max_length=50, default='tcp_scan')
@@ -60,4 +61,13 @@ class Scan(models.Model):
     def has_geographic_data(self):
         return bool(self.latitude and self.longitude)
     
+class ScanHistory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='scan_history')
+    scan = models.ForeignKey(Scan, on_delete=models.CASCADE)
+    action = models.CharField(max_length=50)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(default=dict)
     
+    class Meta:
+        ordering = ['-timestamp']
+
