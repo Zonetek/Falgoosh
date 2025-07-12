@@ -1,19 +1,41 @@
 version: '3.8'
 
 services:
-  api:
+  web:
     build:
-      context: api_applications
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: ./docker/web.Dockerfile
+    container_name: web
     volumes:
-      - api_applications:/app
+      - .:/app
+    working_dir: /app
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
+    depends_on:
+      - db
+    networks:
+      - backend
+
+  api:
+    build:
+      context: .
+      dockerfile: ./docker/api.Dockerfile
+    container_name: api
+    working_dir: /app
+    volumes:
+      - ./api_applications:/app/api_applications
+    env_file:
+      - .env
+    command: tail -f /dev/null   # 🧪 Keeps it running forever doing nothing
     depends_on:
       - db
       - broker
+    networks:
+      - backend
     restart: always
 
   broker:
@@ -23,6 +45,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     restart: always
+    networks:
+      - backend
 
   db:
     container_name: postgres
@@ -37,7 +61,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_HOST: ${POSTGRES_HOST}
-
+    networks:
+      - backend
 
 
   mongodb:
@@ -93,6 +118,9 @@ services:
 networks:
   mynetwork:
     driver: bridge
+  backend:
+    driver: bridge
 
 volumes:
   postgres_data:
+  api_applications:
