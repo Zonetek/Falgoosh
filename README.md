@@ -109,6 +109,10 @@ python manage.py runserver --settings=config.settings.prod
 
 The API documentation is available at `/api/docs/` when the server is running.
 
+## dockerize help
+
+After your container coming up and django server run, you can see urls in 127.0.0.1:8000 not in 0.0.0.0:8000
+
 ## Testing
 
 ```bash
