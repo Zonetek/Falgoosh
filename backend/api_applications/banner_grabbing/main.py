@@ -1,9 +1,11 @@
 import logging
-import threading
-import schedule
-from . import db_operations,vulnerability
-
 import os
+import threading
+
+import schedule
+
+from . import db_operations, vulnerability
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -11,9 +13,6 @@ logging.basicConfig(
 
 def main():
     while True:
-        db_operations.update_enrichment()
-        db_operations.update_banners()
-        db_operations.update_vulnerability()
         enrichment_thread = threading.Thread(
             target=db_operations.update_enrichment, name="EnrichmentThread"
         )
@@ -30,7 +29,10 @@ def main():
         enrichment_thread.join()
         banners_thread.join()
         vulnerability_thread.join()
-        schedule.every(1.5).hours.do(vulnerability.download_and_replace_nvd, os.path.join(os.path.dirname(__file__), "cve_data"))
+        schedule.every(1.5).hours.do(
+            vulnerability.download_and_replace_nvd,
+            os.path.join(os.path.dirname(__file__), "cve_data"),
+        )
 
 
 if __name__ == "__main__":
