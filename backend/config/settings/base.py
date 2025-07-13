@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "api_applications.activity_logging.apps.ActivityLoggingConfig",
     "api_applications.sessions_management.apps.SessionsManagementConfig",
     "api_applications.admin_tools.apps.AdminToolsConfig",
+    "api_applications.shared_models.apps.SharedModelsConfig",
 ]
 
 MIDDLEWARE = [
@@ -73,7 +74,7 @@ SITE_ID = 1
 
 ROOT_URLCONF = "config.urls"
 
-AUTH_USER_MODEL = "accounts.CustomUser"
+AUTH_USER_MODEL = 'shared_models.CustomUser'
 
 TEMPLATES = [
     {

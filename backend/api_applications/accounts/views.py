@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import UserProfile
+from api_applications.shared_models.models import UserProfile, CustomUser
 from .serializers import CustomTokenObtainPairSerializer, UserProfileSerializer
 
 
