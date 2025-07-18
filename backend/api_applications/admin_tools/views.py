@@ -8,6 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 from api_applications.admin_tools.permissions import HasGroup
 from api_applications.admin_tools.serializers import *
+from api_applications.scan.serilizers import ScanHistorySerializer, ScanSerializer
 from api_applications.shared_models.models.scan import Scan, ScanHistory
 from rest_framework import filters
 # from django_filters.rest_framework import DjangoFilterBackend
@@ -98,4 +99,27 @@ class AdminUserViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = AdminScanListSerializer(scans, many=True)
+        return Response(serializer.data)
+    
+class AdminScanViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Scan.objects.select_related('user').all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['target_ip', 'user__username', 'country', 'status']
+    ordering_fields = ['created_at', 'status']
+    permission_classes = [HasGroup('super_admin') | HasGroup('scan_admin')]
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return AdminScanDetailSerializer
+        return AdminScanListSerializer
+    
+    @action(detail=True, methods=['get'])
+    def history(self, request, pk=None):
+        scan = self.get_object()
+        history_qs = ScanHistory.objects.filter(scan=scan).select_related('user').order_by('-timestamp')
+        page = self.paginate_queryset(history_qs)
+        if page is not None:
+            serializer = ScanHistorySerializer(page, many=True) 
+            return self.get_paginated_response(serializer.data)
+        serializer = ScanHistorySerializer(history_qs, many=True)
         return Response(serializer.data)
