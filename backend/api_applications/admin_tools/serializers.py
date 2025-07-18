@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group , Permission
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
-from api_applications.accounts.models import CustomUser
+from api_applications.shared_models.models import CustomUser, Scan
 from api_applications.scan.models import Scan
 
 class AdminUserListSerializer(serializers.ModelSerializer):
@@ -19,25 +19,25 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             'last_login', 'groups_names', 'scans_count', 'role'
         ]
 
-        def get_group_names(self, obj):
-            return [group.name for group in obj.groups.all()]
+    def get_group_names(self, obj):
+        return [group.name for group in obj.groups.all()]
         
-        def get_scans_count(self,obj):
-            return obj.scans.count()
+    def get_scans_count(self,obj):
+        return obj.scans.count()
         
-        def get_role(self, obj):
-            if obj.is_superuser:
-                return 'Super Admin'
-            elif obj.groups.filter(name = 'super_admin'):
-                return 'Super Admin'
-            elif obj.groups.filter(name = 'scan_admin'):
-                return 'Scan Admin'
-            elif obj.groups.filter(name = 'user_admin'):
-                return 'User Admin'
-            elif obj.is_staff:
-                return 'Staff'
-            else:
-                return 'User'
+    def get_role(self, obj):
+        if obj.is_superuser:
+            return 'Super Admin'
+        elif obj.groups.filter(name = 'super_admin'):
+            return 'Super Admin'
+        elif obj.groups.filter(name = 'scan_admin'):
+            return 'Scan Admin'
+        elif obj.groups.filter(name = 'user_admin'):
+            return 'User Admin'
+        elif obj.is_staff:
+            return 'Staff'
+        else:
+            return 'User'
             
 class AdminUserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
