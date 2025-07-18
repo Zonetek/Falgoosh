@@ -10,7 +10,7 @@ from api_applications.admin_tools.permissions import HasGroup
 from api_applications.admin_tools.serializers import *
 from api_applications.shared_models.models.scan import Scan, ScanHistory
 from rest_framework import filters
-from django_filters.rest_framework import DjangoFilterBackend
+# from django_filters.rest_framework import DjangoFilterBackend
 
 
 
