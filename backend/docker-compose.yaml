@@ -1,16 +1,20 @@
 version: '3.8'
 
 services:
-  api:
+  web:
     build:
-      context: api_applications
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: ./docker/web.Dockerfile
+    container_name: web-api
     volumes:
-      - api_applications:/app
+      - .:/app
+    working_dir: /app
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
     depends_on:
       - db
       - broker
@@ -23,6 +27,7 @@ services:
       - "5672:5672"
       - "15672:15672"
     restart: always
+  
 
   db:
     container_name: postgres
@@ -89,6 +94,9 @@ services:
     depends_on:
       - mongodb
     working_dir: /app/api_applications
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
 networks:
   mynetwork:
