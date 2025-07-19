@@ -85,8 +85,8 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             fields = [
             'id', 'username', 'email', 'is_active', 
             'is_staff', 'is_superuser', 'date_joined', 
-            'last_login', 'groups', 'permissions', 
-            'recent_scans', 'role'
+            'last_login', 'groups', 'user_permissions', 
+            'recent_scans','password' ,'scan_stats',
             ]
             extra_kwargs = {
                 'password': {'write_only': True},
@@ -100,7 +100,7 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             scans = obj.scans.all()
             return {
                 'total': scans.count(),
-                'done': scans.filter(status='done').count(),
+                'completed': scans.filter(status='completed').count(),
                 'running': scans.filter(status='running').count(),
                 'failed': scans.filter(status='failed').count(),
                 'pending': scans.filter(status='pending').count()
@@ -130,8 +130,8 @@ class AdminScanListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Scan
         fields = [
-            'id', 'target', 'user_username',
-            'user_email', 'created_at'
+            'id', 'target_ip', 'user_username',
+            'user_email', 'created_at',
         ]
         
 class AdminScanDetailSerializer(serializers.ModelSerializer):
