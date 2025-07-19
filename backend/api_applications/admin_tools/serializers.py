@@ -4,11 +4,11 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from api_applications.shared_models.models import CustomUser, Scan
-from api_applications.scan.models import Scan
+
 
 class AdminUserListSerializer(serializers.ModelSerializer):
     group_names = serializers.SerializerMethodField()
-    scans_counts = serializers.SerializerMethodField()
+    scans_count = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
 
     class Meta:
@@ -16,7 +16,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'is_active', 
             'is_staff', 'is_superuser', 'date_joined', 
-            'last_login', 'groups_names', 'scans_count', 'role'
+            'last_login', 'group_names', 'scans_count', 'role'
         ]
 
     def get_group_names(self, obj):
@@ -52,7 +52,7 @@ class AdminUserCreateSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = [
             'username', 'email', 'password', 'password_confirm',
-            'is_active', 'admin_role'
+            'is_active','groups',
         ]
     
     def validate(self, data):
