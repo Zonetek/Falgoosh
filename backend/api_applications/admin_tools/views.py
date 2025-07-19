@@ -11,7 +11,7 @@ from api_applications.admin_tools.serializers import *
 from api_applications.scan.serilizers import ScanHistorySerializer, ScanSerializer
 from api_applications.shared_models.models.scan import Scan, ScanHistory
 from rest_framework import filters
-# from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 
@@ -103,7 +103,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     
 class AdminScanViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Scan.objects.select_related('user').all()
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['target_ip', 'user__username', 'country', 'status']
     ordering_fields = ['created_at', 'status']
     permission_classes = [HasGroup('super_admin') | HasGroup('scan_admin')]
