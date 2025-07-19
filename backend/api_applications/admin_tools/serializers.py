@@ -126,13 +126,23 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
 class AdminScanListSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
     user_email = serializers.CharField(source='user.email', read_only=True)
+    location_display = serializers.CharField(source='location_display', read_only=True)
+    has_geographic_data = serializers.BooleanField(source='has_geographic_data', read_only=True)
+    port_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Scan
         fields = [
-            'id', 'target_ip', 'user_username',
-            'user_email', 'created_at',
+            'id', 'target_ip', 'target_ports', 'scan_type', 'status',
+            'country', 'city', 'region', 'latitude', 'longitude',
+            'domain', 'organization', 'isp', 'asn',
+            'mongo_object_id', 'created_at', 'updated_at',
+            'started_at', 'completed_at', 'notes',
+            'user_username', 'user_email', 'location_display', 'has_geographic_data', 'port_count'
         ]
+
+    def get_port_count(self, obj):
+        return obj.get_port_count()
         
 class AdminScanDetailSerializer(serializers.ModelSerializer):
     user = AdminUserListSerializer(read_only=True)
