@@ -139,3 +139,4 @@ def test_admin_user_detail_serializer_write_only_password():
     serializer = AdminUserDetailSerializer(user)
     data = serializer.data
     assert "password" not in data 
+
