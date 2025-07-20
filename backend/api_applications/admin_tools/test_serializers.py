@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth.models import Group, Permission
 from api_applications.shared_models.models import CustomUser
-from api_applications.admin_tools.serializers import AdminUserListSerializer, AdminUserCreateSerializer, AdminUserDetailSerializer
+from api_applications.admin_tools.serializers import AdminUserListSerializer, AdminUserCreateSerializer, AdminUserDetailSerializer,AdminScanListSerializer
 
 @pytest.mark.django_db
 def test_admin_user_list_serializer_fields():
@@ -140,3 +140,50 @@ def test_admin_user_detail_serializer_write_only_password():
     data = serializer.data
     assert "password" not in data 
 
+@pytest.mark.django_db
+def test_admin_scan_list_serializer_output():
+    user = CustomUser.objects.create_user(username="scantestuser", email="scan@test.com", password="secure123")
+    scan = Scan.objects.create(
+        user=user,
+        target_ip="8.8.8.8",
+        target_ports="22,80,443",
+        scan_type="tcp_scan",
+        status="completed",
+        country="US",
+        city="Mountain View",
+        region="California",
+        latitude=37.4056,
+        longitude=-122.0775,
+        domain="example.com",
+        organization="Google",
+        isp="Google LLC",
+        asn="AS15169",
+        mongo_object_id="60b8b2b9e1d2c3a2f1c8a4b5",
+        notes="test scan"
+    )
+
+    serializer = AdminScanListSerializer(scan)
+    data = serializer.data
+
+    assert data["target_ip"] == "8.8.8.8"
+    assert data["user_username"] == "scantestuser"
+    assert data["user_email"] == "scan@test.com"
+    assert data["country"] == "US"
+    assert data["city"] == "Mountain View"
+    assert data["region"] == "California"
+    assert data["latitude"] == 37.4056
+    assert data["longitude"] == -122.0775
+    assert data["domain"] == "example.com"
+    assert data["organization"] == "Google"
+    assert data["isp"] == "Google LLC"
+    assert data["asn"] == "AS15169"
+    assert data["mongo_object_id"] == "60b8b2b9e1d2c3a2f1c8a4b5"
+    assert data["scan_type"] == "tcp_scan"
+    assert data["status"] == "completed"
+    assert data["notes"] == "test scan"
+    assert data["has_geographic_data"] is True
+    assert data["location_display"] == "Mountain View, California, US"
+    assert data["port_count"] == 3
+
+    assert "created_at" in data
+    assert "updated_at" in data

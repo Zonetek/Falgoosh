@@ -126,8 +126,6 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
 class AdminScanListSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
     user_email = serializers.CharField(source='user.email', read_only=True)
-    location_display = serializers.CharField(source='location_display', read_only=True)
-    has_geographic_data = serializers.BooleanField(source='has_geographic_data', read_only=True)
     port_count = serializers.SerializerMethodField()
     
     class Meta:
