@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth.models import Group, Permission
 from api_applications.shared_models.models import CustomUser
-from api_applications.admin_tools.serializers import AdminUserListSerializer, AdminUserCreateSerializer, AdminUserDetailSerializer,AdminScanListSerializer
+from api_applications.admin_tools.serializers import AdminUserListSerializer, AdminUserCreateSerializer, AdminUserDetailSerializer,AdminScanListSerializer, AdminScanDetailSerializer
 
 @pytest.mark.django_db
 def test_admin_user_list_serializer_fields():
@@ -185,5 +185,44 @@ def test_admin_scan_list_serializer_output():
     assert data["location_display"] == "Mountain View, California, US"
     assert data["port_count"] == 3
 
+    assert "created_at" in data
+    assert "updated_at" in data
+
+
+@pytest.mark.django_db
+def test_admin_scan_detail_serializer_fields():
+    user = CustomUser.objects.create_user(username="scandetail", email="scan@det.com", password="mysecurepass")
+    scan = Scan.objects.create(
+        user=user,
+        target_ip="10.10.10.10",
+        target_ports="80,443",
+        scan_type="tcp_scan",
+        status="completed",
+        country="DE",
+        city="Berlin",
+        region="Berlin",
+        latitude=52.52,
+        longitude=13.405,
+        domain="site.com",
+        organization="ExampleOrg",
+        isp="Internet Provider",
+        asn="AS12345",
+        mongo_object_id="abcdef123456abcdef123456",
+        notes="integration test"
+    )
+
+    serializer = AdminScanDetailSerializer(scan)
+    data = serializer.data
+
+
+    assert data["target_ip"] == "10.10.10.10"
+    assert data["status"] == "completed"
+    assert data["country"] == "DE"
+    assert data["city"] == "Berlin"
+    assert data["domain"] == "site.com"
+    assert data["mongo_object_id"] == "abcdef123456abcdef123456"
+    assert "user" in data
+    assert data["user"]["username"] == "scandetail"
+    assert data["user"]["email"] == "scan@det.com"
     assert "created_at" in data
     assert "updated_at" in data
