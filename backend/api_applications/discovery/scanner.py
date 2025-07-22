@@ -4,8 +4,11 @@ import threading
 import time
 from datetime import datetime
 
-from discovery import db_operations, port_scanner
-from discovery.schema import ScanResult
+# from discovery import db_operations, port_scanner
+# import db_operations
+
+from . import port_scanner
+from .schema import ScanResult
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -26,6 +29,7 @@ def generate_public_ipv4_ranges_stream(cidr_prefix=24):
 
 
 def daily_scan():
+    from . import db_operations
     while True:
         for ip_range in generate_public_ipv4_ranges_stream(24):
             logging.info(f"Scanning: {ip_range}")
@@ -52,6 +56,7 @@ def daily_scan():
 
 
 def rescan_unresponsive():
+    from . import db_operations
     while True:
         down_ips = db_operations.find_down_ips()
         if down_ips:
