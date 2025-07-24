@@ -1,24 +1,26 @@
+import os
+import sys
+
+from dotenv import load_dotenv
+
 from .base import (
-    BASE_DIR,
-    INSTALLED_APPS,
-    MIDDLEWARE,
-    STATIC_URL,
-    STATIC_ROOT,
-    MEDIA_ROOT,
-    MEDIA_URL,
-    ROOT_URLCONF,
-    WSGI_APPLICATION,
-    TEMPLATES,
     AUTH_USER_MODEL,
     AUTHENTICATION_BACKENDS,
-    REST_FRAMEWORK,
+    BASE_DIR,
+    INSTALLED_APPS,
+    MEDIA_ROOT,
+    MEDIA_URL,
+    MIDDLEWARE,
     REST_AUTH,
+    REST_FRAMEWORK,
+    ROOT_URLCONF,
     SIMPLE_JWT,
     SITE_ID,
+    STATIC_ROOT,
+    STATIC_URL,
+    TEMPLATES,
+    WSGI_APPLICATION,
 )
-import os
-from dotenv import load_dotenv
-import sys
 
 load_dotenv()
 
@@ -30,14 +32,17 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR.parent / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("POSTGRES_HOST"),
+        "PORT": os.getenv("POSTGRES_PORT"),
     }
 }
 
 # Testing configuration
-TESTING = sys.argv[1:2] == ['test']
-
+TESTING = sys.argv[1:2] == ["test"]
 # Debug toolbar settings - only if not testing
 if not TESTING:
     INSTALLED_APPS += ["debug_toolbar"]
