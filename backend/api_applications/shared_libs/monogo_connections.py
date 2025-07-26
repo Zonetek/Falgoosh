@@ -6,7 +6,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure
 
 MONGO_HOST = os.getenv("MONGO_HOST")
-MONGO_PORT = int(os.getenv("MONGO_PORT"))
+MONGO_PORT = int(os.getenv("MONGO_PORT","27017"))
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 MONGO_USERNAME = os.getenv("MONGO_USERNAME")
 MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")

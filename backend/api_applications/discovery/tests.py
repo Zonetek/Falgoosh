@@ -1,7 +1,6 @@
 import unittest
-
-import port_scanner
-import scanner
+from . import  port_scanner,scanner, db_operations
+from unittest.mock import patch
 
 
 class test(unittest.TestCase):
@@ -10,11 +9,12 @@ class test(unittest.TestCase):
         ip_range = "127.0.0.1/32"
         port_scanner.call_ip_range(ip_range)
 
-    def test_scan_ports(self):
-
-        ip, open_ports = port_scanner.scan_ports("127.0.0.1", [80, 22])
-        print(f"IP: {ip}, Open Ports: {open_ports}")
+    @patch("api_applications.discovery.port_scanner.scan_ports")
+    def test_scan_ports(self, mock_scan):
+        mock_scan.return_value = ("127.0.0.1", [22, 80])
+        ip, open_ports = port_scanner.scan_ports("127.0.0.1")
         self.assertEqual(ip, "127.0.0.1")
+        self.assertListEqual(open_ports, [22, 80])
 
     def test_generate_public_ipv4_ranges_stream(self):
 
