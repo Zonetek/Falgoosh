@@ -104,6 +104,3 @@ class UserProfile(models.Model):
 
     def get_email(self):
         return self.user.email
-
-    
-
