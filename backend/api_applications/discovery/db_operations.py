@@ -1,7 +1,7 @@
 import logging
 import time
 
-from ..shared_libs import monogo_connections
+from shared_libs import monogo_connections
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"

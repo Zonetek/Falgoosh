@@ -1,5 +1,6 @@
 import unittest
-from . import  port_scanner,scanner, db_operations
+import port_scanner
+import scanner
 from unittest.mock import patch
 
 

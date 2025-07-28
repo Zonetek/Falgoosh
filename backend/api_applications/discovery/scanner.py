@@ -5,9 +5,10 @@ import time
 from datetime import datetime
 
 # from discovery import db_operations, port_scanner
-# import db_operations
+
 
 from . import port_scanner
+from . import db_operations
 from .schema import ScanResult
 
 logging.basicConfig(

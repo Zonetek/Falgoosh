@@ -121,7 +121,6 @@ class TestVulnerabilityModule(unittest.TestCase):
             80: "HTTP/1.1 200 OK Server: Apache/2.4.29 (Ubuntu) X-Powered-By: PHP/7.2.24"
         }
         result = vulnerability.get_service(banners)
-        # Should include Apache, PHP
         found_services = [s[0] for s in result]
         self.assertIn("Apache", found_services)
         self.assertIn("PHP", found_services)
@@ -134,7 +133,6 @@ class TestVulnerabilityModule(unittest.TestCase):
     @patch("gzip.open")
     @patch("os.path.join")
     def test_search_cve_by_service_version_returns_results(self, mock_join, mock_gzip_open):
-        # Simulate a fake NVD structure for searching
         mock_join.return_value = "fakepath"
         fake_cve_data = {
             "CVE_Items": [
@@ -157,7 +155,6 @@ class TestVulnerabilityModule(unittest.TestCase):
     @patch("vulnerability.get_service")
     @patch("vulnerability.search_cve_by_service_version")
     def test_get_vul_with_service(self, mock_search_cve, mock_get_service):
-        # Pretend get_service returns [('Apache', '2.4.29')]
         mock_get_service.return_value = [("Apache", "2.4.29")]
         mock_search_cve.return_value = [
             {"cve_id": "CVE-2020-1234", "description": "Fake vul", "published": "2020-12-01"}
@@ -174,7 +171,6 @@ class TestVulnerabilityModule(unittest.TestCase):
             80: "HTTP/1.1 200 OK Server: Nginx/1.18.0"
         }
         result = vulnerability.get_service(banners)
-        # Flatten results for easier checking
         all_services = [svc[0] for svc in result]
         self.assertTrue(any(s in all_services for s in ["vsFTPd", "Postfix", "Nginx"]))
     
