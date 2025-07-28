@@ -3,6 +3,7 @@ import logging
 from shared_libs import monogo_connections
 
 from . import banner_grabber, enrichment, vulnerability
+from discovery import schema
 
 
 def update_enrichment():
@@ -23,12 +24,21 @@ def update_enrichment():
                 f_p = enrichment.os_finger_print(i["_id"])
                 g_l = enrichment.isp_lookup(i["_id"])
                 domain = enrichment.get_domain(i["_id"])
+                finger_print_model = schema.FingerPrintInfo(**f_p)
+                general_model = schema.GeneralInfo(**g_l)
+                update_fields = {}
+                if finger_print_model:
+                    update_fields["finger_print"] = finger_print_model.dict()
+                if general_model:
+                    update_fields["general"] = general_model.dict()
+                if domain:
+                    update_fields["domain"] = domain
                 logging.info(
                     f"Updating {i['_id']} with f_p={f_p}, g_l={g_l}, domain={domain}"
                 )
                 db.scan_results.update_one(
                     {"_id": i["_id"]},
-                    {"$set": {"finger_print": f_p, "general": g_l, "domain": domain}},
+                    {"$set": update_fields},
                 )
             except Exception as e:
                 logging.error(f"Failed enrichment for {i['_id']}: {e}", exc_info=True)
