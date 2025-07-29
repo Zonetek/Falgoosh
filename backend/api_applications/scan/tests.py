@@ -1,6 +1,13 @@
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase, APIClient
+from django.contrib.auth import get_user_model
 from django.test import TestCase
-from api_applications.shared_models.models.scan import Scan, CustomUser , ScanHistory
-from api_applications.scan.serilizers import ScanSerializer, ScanHistorySerializer , ScanSearchSerializer
+from api_applications.shared_models.models.scan import Scan, ScanHistory
+from api_applications.shared_models.models import CustomUser
+from api_applications.scan.serializers import ScanSerializer, ScanHistorySerializer , ScanSearchSerializer
+
+User = get_user_model()
 
 class ScanSerializerTest(TestCase):
     def setUp(self):
@@ -63,3 +70,36 @@ class ScanSearchSerializerTest(TestCase):
         serializer = ScanSearchSerializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("port", serializer.errors)
+
+class SearchIPTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="test", password="pass", email="test@example.com"
+        )
+        self.client = APIClient()
+        self.url = reverse("search_ip")
+
+    def test_missing_ip(self):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Missing", resp.data["error"])
+
+    def test_invalid_ip(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.get(self.url, {"ip": "not_an_ip"})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data["error"], "Invalid IP address format")
+
+    def test_anonymous_no_record(self):
+        resp = self.client.get(self.url, {"ip": "203.0.113.5"})
+        self.assertIn(resp.status_code, (status.HTTP_200_OK, status.HTTP_404_NOT_FOUND))
+        self.assertEqual(Scan.objects.count(), 0)
+        self.assertEqual(ScanHistory.objects.count(), 0)
+
+    def test_authenticated_creates_scan_and_history(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.get(self.url, {"ip": "203.0.113.5"})
+        self.assertIn(resp.status_code, (status.HTTP_200_OK, status.HTTP_404_NOT_FOUND))
+        scan = Scan.objects.get(user=self.user, target_ip="203.0.113.5")
+        histories = ScanHistory.objects.filter(scan=scan)
+        self.assertTrue(histories.exists())
