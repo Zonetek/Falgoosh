@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from api_applications.shared_libs.mongo_fetch_result import fetch_by_ip
 from api_applications.shared_models.models.scan import ScanHistory, Scan
+from api_applications.scan.serializers import ScanSerializer, ScanHistorySerializer
 
 logger = logging.getLogger(__name__)
 
@@ -97,3 +98,27 @@ class SearchIPView(APIView):
             )
 
         
+class UserScansView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        scans = Scan.objects.filter(user=request.user).order_by('-created_at')
+        serializer = ScanSerializer(scans, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class UserScanHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, scan_id):
+        try:
+            scan = Scan.objects.get(pk=scan_id, user=request.user)
+        except Scan.DoesNotExist:
+            return Response(
+                {"error": "Scan not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        history_qs = ScanHistory.objects.filter(scan=scan).order_by('-timestamp')
+        serializer = ScanHistorySerializer(history_qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
