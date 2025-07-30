@@ -42,7 +42,7 @@ class ScanResult(BaseModel):
     domain: Optional[str] = None
     service_type: Optional[Dict[int, str]] = None  # port(int): str
     vulnerability: Optional[Dict[str, List[VulnerabilityInfo]]] = (
-        None  # sercicename(str) : list (contains dict ---> cv_id : str, description: str, published : str , assigner : str )
+        None  # sercicename(str) : list (contains dict ---> cv_id : VulnerabilityInfo model  )
     )
 
     class Config:
