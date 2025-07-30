@@ -49,15 +49,17 @@ def update_scan_result(data: dict):
         logging.info(f"the data in update is {data}")
         result = db.scan_results.update_one(
             {"_id": data["_id"]},
-            {"$set": {"ports": data["ports"], "last_update": data["last_update"]}},
             {
+                "$set": {"ports": data["ports"], "last_update": data["last_update"]},
                 "$unset": {
                     "finger_print": "",
                     "general": "",
                     "domain": "",
                     "service_type": "",
-                }
+                    "vulnerability": "",
+                },
             },
+            upsert=True,
         )
         return True
     except Exception as e:

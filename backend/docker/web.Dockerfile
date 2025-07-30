@@ -12,6 +12,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -23,9 +24,13 @@ COPY . /app
 
 # Copy the entrypoint script
 COPY ./docker/entrypoint.sh /entrypoint.sh
+# convert line endings
+RUN dos2unix /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY ./docker/wait-for-it.sh /wait-for-it.sh
+# convert line endings
+RUN dos2unix /wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
 
 # Set the entrypoint script

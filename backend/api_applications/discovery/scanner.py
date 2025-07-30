@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 
 from discovery import db_operations, port_scanner
-from discovery.schema import ScanResult
+from .schema import ScanResult
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -26,6 +26,7 @@ def generate_public_ipv4_ranges_stream(cidr_prefix=24):
 
 
 def daily_scan():
+    from . import db_operations
     while True:
         for ip_range in generate_public_ipv4_ranges_stream(24):
             logging.info(f"Scanning: {ip_range}")
@@ -34,9 +35,13 @@ def daily_scan():
                 now = datetime.now()
                 if db_operations.is_exists(ip):
                     logging.info(f"{ip} is already exists")
-                    scan_result = ScanResult(_id=ip, ports=ports, last_update=now)
+                    scan_data = {
+                        "_id": ip,
+                        "ports": ports,
+                        "last_update": now
+                    }
                     db_operations.update_scan_result(
-                        scan_result.dict(by_alias=True, exclude_none=True)
+                        scan_data
                     )
                 else:
                     scan_result = ScanResult(_id=ip, ports=ports, last_update=now)
@@ -52,17 +57,20 @@ def daily_scan():
 
 
 def rescan_unresponsive():
+    from . import db_operations
     while True:
         down_ips = db_operations.find_down_ips()
         if down_ips:
             for i in db_operations.find_down_ips():
                 result = port_scanner.scan_ports(i["_id"])
                 now = datetime.now()
-                scan_result = ScanResult(
-                    _id=result[0], ports=result[1], last_update=now
-                )
+                update_data = {
+                    "_id": result[0],
+                    "ports": result[1],
+                    "last_update": now
+                }
                 db_operations.update_scan_result(
-                    scan_result.dict(by_alias=True, exclude_none=True)
+                    update_data
                 )
 
             logging.info("Sleeping for 1 hour")
