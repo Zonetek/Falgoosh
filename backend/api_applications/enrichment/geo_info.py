@@ -1,5 +1,6 @@
 import requests
 
+
 def geo_info(ip):
     resp = requests.get(f"http://ip-api.com/json/{ip}").json()
     return {

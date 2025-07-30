@@ -24,10 +24,16 @@ def main():
         logging.info("Waiting for enrichment and banner threads to complete...")
         banners_thread.join()
         vulnerability_thread.join()
-        schedule.every(1.5).hours.do(
-            vulnerability.download_and_replace_nvd,
-            os.path.join(os.path.dirname(__file__), "cve_data"),
-        )
+        try:
+            schedule.every(1.5).hours.do(
+                vulnerability.download_and_replace_nvd,
+                os.path.join(os.path.dirname(__file__), "cve_data"),
+            )
+        
+        except Exception as e:
+            logging.error("Failed to download and replace CVE file.")
+            
+            
 
 
 if __name__ == "__main__":

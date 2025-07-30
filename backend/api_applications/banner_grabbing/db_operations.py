@@ -24,6 +24,7 @@ def update_banners():
             db.scan_results.update_one(
                 {"_id": i["_id"]}, {"$set": {"service_type": banner}}
             )
+    
     except Exception as e:
         logging.error(f"Operation do not complete in update banner : {e}")
 
@@ -51,7 +52,9 @@ def update_vulnerability():
                     db.scan_results.update_one(
                         {"_id": i["_id"]}, {"$set": {"vulnerability": vul}}
                     )
+        
         except Exception as e:
             logging.error(f"Operation do not complete in vuls : {e}")
+    
     except Exception as e:
         logging.error(f"Operation do not complete in vuls : {e}")

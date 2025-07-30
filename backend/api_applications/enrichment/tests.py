@@ -6,6 +6,7 @@ import geo_info
 import dns_reverse
 import db_operations
 
+
 class TestFingerPrint(unittest.TestCase):
     @patch('finger_print.nmap.PortScanner')
     def test_os_finger_print_with_osclass(self, mock_portscanner):
@@ -24,7 +25,7 @@ class TestFingerPrint(unittest.TestCase):
             }]
         }
         mock_portscanner.return_value = mock_scan
-        
+
         result = finger_print.os_finger_print("127.0.0.1")
         self.assertIsInstance(result, dict)
         self.assertEqual(result["os_match"], "Debian Linux 5.x")
@@ -44,10 +45,11 @@ class TestFingerPrint(unittest.TestCase):
             }]
         }
         mock_portscanner.return_value = mock_scan
-        
+
         result = finger_print.os_finger_print("127.0.0.1")
         self.assertIn("os_match", result)
         self.assertIn("accuracy", result)
+
 
 class TestGeoInfo(unittest.TestCase):
     @patch('geo_info.requests.get')
@@ -75,6 +77,7 @@ class TestGeoInfo(unittest.TestCase):
         self.assertEqual(result["organization"], "Google")
         self.assertEqual(result["asn"], "AS15169")
 
+
 class TestDNSReverse(unittest.TestCase):
     @patch('dns_reverse.socket.gethostbyaddr')
     def test_get_domain_success(self, mock_gethostbyaddr):
@@ -87,6 +90,7 @@ class TestDNSReverse(unittest.TestCase):
         mock_gethostbyaddr.side_effect = dns_reverse.socket.herror
         domain = dns_reverse.get_domain("255.255.255.255")
         self.assertIsNone(domain)
+
 
 class TestDBOperations(unittest.TestCase):
     @patch('db_operations.monogo_connections.connect_monogo')
@@ -119,6 +123,7 @@ class TestDBOperations(unittest.TestCase):
                 "domain": "test.domain"
             }}
         )
+
 
 if __name__ == '__main__':
     unittest.main()
