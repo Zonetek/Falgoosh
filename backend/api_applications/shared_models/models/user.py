@@ -83,11 +83,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class UserProfile(models.Model):
-    """TODO
-    add related subscription model
-    """
+    MEMBERSHIP_CHOICES = [
+        ('free', 'Free'),
+        ('member', 'Member'),
+        ('pro', 'Pro'),
+        ('premium', 'Premium'),
+    ]
 
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    membership = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='free')
+    stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
     scan_limit = models.IntegerField(default=0)
     api_calls_remaining = models.IntegerField(default=100)
     is_verified = models.BooleanField(default=False)
