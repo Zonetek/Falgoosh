@@ -3,8 +3,11 @@ from django.contrib.auth.models import update_last_login
 from config.settings.base import UPDATE_LAST_LOGIN
 import uuid
 from rest_framework import serializers
-from api_applications.shared_models.models import CustomUser, UserProfile
-
+from api_applications.shared_models.models import UserProfile
+from api_applications.billing.serializers import (
+    PurchaseHistorySerializer,
+    InvoiceSerializer,
+)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom token serializer to include additional user information."""
@@ -45,13 +48,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
-
+    purchases = PurchaseHistorySerializer(many=True, read_only=True, source='user.purchases')
+    invoices = InvoiceSerializer(many=True, read_only=True, source='user.invoices')
+    
     class Meta:
         model = UserProfile
         fields = [
             "id",
             "user",
             "is_verified",
+            "membership",
+            "stripe_customer_id",
+            "purchases",
+            "invoices",
             "session_id",
             "scan_limit",
         ]

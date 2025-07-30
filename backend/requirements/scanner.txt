@@ -6,3 +6,4 @@ python-nmap==0.7.1
 geocoder==1.38.1
 pydantic==2.11.7
 schedule==1.2.2
+Django==5.2

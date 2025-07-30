@@ -1,13 +1,13 @@
 import ipaddress
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-
+import logging
 import yaml
 
 try:
     from scapy.all import IP, TCP, sr
 except KeyboardInterrupt:
-    print("\n[!] Import interrupted by user (Scapy took too long to load).")
+    logging.error("\n[!] Import interrupted by user (Scapy took too long to load).")
     import sys
 
     sys.exit(0)

@@ -1,6 +1,6 @@
 from django.test import TestCase
 from api_applications.shared_models.models.scan import Scan, CustomUser , ScanHistory
-from api_applications.scan.serilizers import ScanSerializer, ScanHistorySerializer , ScanSearchSerializer
+from api_applications.scan.serializers import ScanSerializer, ScanHistorySerializer , ScanSearchSerializer
 
 class ScanSerializerTest(TestCase):
     def setUp(self):

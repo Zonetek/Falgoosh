@@ -95,6 +95,28 @@ services:
     depends_on:
       - mongodb
     working_dir: /app/api_applications
+    # dns:
+    #   - 8.8.8.8
+    #   - 1.1.1.1
+
+
+  enrichments:
+    build:
+      context: .
+      dockerfile: ./docker/enrichments.Dockerfile
+    container_name: enrichments
+    command: python -m enrichment.main
+    restart: on-failure
+    networks:
+      - mynetwork
+    env_file:
+      - .env
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    depends_on:
+      - mongodb
+    working_dir: /app/api_applications
     dns:
       - 8.8.8.8
       - 1.1.1.1
