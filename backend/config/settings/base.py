@@ -117,30 +117,27 @@ REST_AUTH = {
     "USE_JWT": True,
     "SESSION_LOGIN": False,
     "TOKEN_MODEL": None,
+    'REGISTER_SERIALIZER': 'api_applications.accounts.serializers.CustomRegisterSerializer',
     "JWT_AUTH_COOKIE": "access_token",
     "JWT_AUTH_REFRESH_COOKIE": "refresh-token",
     "JWT_AUTH_REFRESH_COOKIE_PATH": "/dj-rest-auth/token/refresh/",  # Path for the refresh token cookie
     "JWT_AUTH_SECURE": True,  # only on https
-    "JWT_AUTH_HTTPONLY": False,  # accessible via JavaScript
-    "JWT_AUTH_SAMESITE": "Lax",
+    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_SAMESITE": "Strict",
     "JWT_AUTH_RETURN_EXPIRATION": True,  # include exp in the token response
     "JWT_AUTH_COOKIE_USE_CSRF": True,  # use CSRF protection for the auth cookie
 }
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", 10))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", 2))),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
-    "ALGORITHM": "HS256",
-    "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", os.getenv("SECRET_KEY")),
-    "VERIFYING_KEY": None,
-    "AUDIENCE": None,
-    "ISSUER": None,
-    "JWK_URL": None,
-    "LEEWAY": 0,
+    "ALGORITHM": "HS512",  # Stronger algorithm than HS256
+    "SIGNING_KEY": os.getenv("JWT_SECRET_KEY") or os.getenv("SECRET_KEY"),
+    "VERIFYING_KEY": os.getenv("JWT_VERIFYING_KEY", None),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
@@ -154,12 +151,16 @@ SIMPLE_JWT = {
     "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.tokens.RefreshToken",
     "INCLUDE_TOKEN_CLAIMS": True,
     "COPY_ACCESS_TOKEN_CLAIMS": True,
+    "TOKEN_BLACKLIST_ENABLED": True,
+    'TOKEN_BACKEND': 'rest_framework_simplejwt.token_blacklist.backends.BlacklistBackend',
+    'BLACKLIST_TOKEN_CHECKS': [
+        'rest_framework_simplejwt.token_blacklist.check_blacklisted_token',
+    ],
 }
 
 
 ACCOUNT_EMAIL_VERIFICATION = "none"  # or "optional" or "mandatory"
 ACCOUNT_LOGIN_METHODS = {"username"}
-
 UPDATE_LAST_LOGIN = True
 
 # Internationalization
