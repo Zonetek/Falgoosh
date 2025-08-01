@@ -4,6 +4,25 @@ import django.db.models.deletion
 import uuid
 from django.conf import settings
 from django.db import migrations, models
+from django.contrib.auth import get_user_model
+from django.conf import settings
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+def create_admin_user(apps, schema_editor):
+    user = get_user_model()
+    username = os.getenv("DJANGO_SUPERUSER_USERNAME", "admin")
+    email = os.getenv("DJANGO_SUPERUSER_EMAIL", "admin@example.com")
+    password = os.getenv("DJANGO_SUPERUSER_PASSWORD", "")
+
+    if not user.objects.filter(username=username).exists():
+        print(f"Creating admin user '{username}'")
+        user.objects.create_superuser(username=username, email=email, password=password)
+    else:
+        print(f"Admin user '{username}' already exists.")
 
 
 class Migration(migrations.Migration):
@@ -11,71 +30,168 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CustomUser',
+            name="CustomUser",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('username', models.CharField(max_length=16, unique=True)),
-                ('email', models.EmailField(max_length=100, unique=True)),
-                ('password', models.CharField(max_length=128)),
-                ('is_active', models.BooleanField(default=True)),
-                ('is_superuser', models.BooleanField(default=False)),
-                ('is_staff', models.BooleanField(default=False)),
-                ('date_joined', models.DateTimeField(auto_now_add=True)),
-                ('last_login', models.DateTimeField(auto_now=True)),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='groups_permissions', related_query_name='groups_permissions', to='auth.group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_permissions_set', related_query_name='user_permissions', to='auth.permission', verbose_name='user permissions')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("username", models.CharField(max_length=16, unique=True)),
+                ("email", models.EmailField(max_length=100, unique=True)),
+                ("password", models.CharField(max_length=128)),
+                ("is_active", models.BooleanField(default=True)),
+                ("is_superuser", models.BooleanField(default=False)),
+                ("is_staff", models.BooleanField(default=False)),
+                ("date_joined", models.DateTimeField(auto_now_add=True)),
+                ("last_login", models.DateTimeField(auto_now=True)),
+                (
+                    "groups",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.",
+                        related_name="groups_permissions",
+                        related_query_name="groups_permissions",
+                        to="auth.group",
+                        verbose_name="groups",
+                    ),
+                ),
+                (
+                    "user_permissions",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Specific permissions for this user.",
+                        related_name="user_permissions_set",
+                        related_query_name="user_permissions",
+                        to="auth.permission",
+                        verbose_name="user permissions",
+                    ),
+                ),
             ],
             options={
-                'verbose_name_plural': 'Users',
+                "verbose_name_plural": "Users",
             },
         ),
         migrations.CreateModel(
-            name='UserProfile',
+            name="UserProfile",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('scan_limit', models.IntegerField(default=0)),
-                ('api_calls_remaining', models.IntegerField(default=100)),
-                ('is_verified', models.BooleanField(default=False)),
-                ('last_login_ip', models.GenericIPAddressField(blank=True, null=True)),
-                ('session_id', models.UUIDField(default=uuid.uuid4, editable=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("scan_limit", models.IntegerField(default=0)),
+                ("api_calls_remaining", models.IntegerField(default=100)),
+                ("is_verified", models.BooleanField(default=False)),
+                ("last_login_ip", models.GenericIPAddressField(blank=True, null=True)),
+                ("session_id", models.UUIDField(default=uuid.uuid4, editable=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
+        
+        # create superuser and check if exist.
+        migrations.RunPython(create_admin_user),  
+        
         migrations.CreateModel(
-            name='Scan',
+            name="Scan",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('target_ip', models.GenericIPAddressField()),
-                ('target_ports', models.TextField(help_text='Comma-separated port numbers or ranges')),
-                ('scan_type', models.CharField(default='tcp_scan', max_length=50)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('running', 'Running'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending', max_length=20)),
-                ('country', models.CharField(blank=True, max_length=100, null=True)),
-                ('city', models.CharField(blank=True, max_length=100, null=True)),
-                ('region', models.CharField(blank=True, max_length=100, null=True)),
-                ('latitude', models.FloatField(blank=True, null=True)),
-                ('longitude', models.FloatField(blank=True, null=True)),
-                ('domain', models.CharField(blank=True, max_length=255, null=True)),
-                ('organization', models.CharField(blank=True, max_length=255, null=True)),
-                ('isp', models.CharField(blank=True, max_length=255, null=True)),
-                ('asn', models.CharField(blank=True, max_length=100, null=True)),
-                ('mongo_object_id', models.CharField(blank=True, help_text='MongoDB ObjectId for scan results', max_length=24, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('started_at', models.DateTimeField(blank=True, null=True)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('notes', models.TextField(blank=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='scans', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("target_ip", models.GenericIPAddressField()),
+                (
+                    "target_ports",
+                    models.TextField(
+                        help_text="Comma-separated port numbers or ranges"
+                    ),
+                ),
+                ("scan_type", models.CharField(default="tcp_scan", max_length=50)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("running", "Running"),
+                            ("completed", "Completed"),
+                            ("failed", "Failed"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("country", models.CharField(blank=True, max_length=100, null=True)),
+                ("city", models.CharField(blank=True, max_length=100, null=True)),
+                ("region", models.CharField(blank=True, max_length=100, null=True)),
+                ("latitude", models.FloatField(blank=True, null=True)),
+                ("longitude", models.FloatField(blank=True, null=True)),
+                ("domain", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "organization",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("isp", models.CharField(blank=True, max_length=255, null=True)),
+                ("asn", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "mongo_object_id",
+                    models.CharField(
+                        blank=True,
+                        help_text="MongoDB ObjectId for scan results",
+                        max_length=24,
+                        null=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("started_at", models.DateTimeField(blank=True, null=True)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                ("notes", models.TextField(blank=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="scans",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['user', 'target_ip'], name='shared_mode_user_id_1a2b53_idx'), models.Index(fields=['mongo_object_id'], name='shared_mode_mongo_o_d6d76c_idx'), models.Index(fields=['country', 'city'], name='shared_mode_country_181226_idx'), models.Index(fields=['organization'], name='shared_mode_organiz_adb906_idx')],
+                "ordering": ["-created_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["user", "target_ip"],
+                        name="shared_mode_user_id_1a2b53_idx",
+                    ),
+                    models.Index(
+                        fields=["mongo_object_id"],
+                        name="shared_mode_mongo_o_d6d76c_idx",
+                    ),
+                    models.Index(
+                        fields=["country", "city"],
+                        name="shared_mode_country_181226_idx",
+                    ),
+                    models.Index(
+                        fields=["organization"], name="shared_mode_organiz_adb906_idx"
+                    ),
+                ],
             },
         ),
     ]
