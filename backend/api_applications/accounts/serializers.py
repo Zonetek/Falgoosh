@@ -8,6 +8,11 @@ from api_applications.billing.serializers import (
     PurchaseHistorySerializer,
     InvoiceSerializer,
 )
+from dj_rest_auth.registration.serializers import RegisterSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom token serializer to include additional user information."""
@@ -46,11 +51,24 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+class CustomRegisterSerializer(RegisterSerializer):
+    email = serializers.EmailField(required=True, allow_blank=False)
+
+    def validate_email(self, value):
+        if not value or value.strip() == "":
+            raise serializers.ValidationError("Email is required.")
+        if User.objects.filter(email__iexact=value.strip()).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value.lower()
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
-    purchases = PurchaseHistorySerializer(many=True, read_only=True, source='user.purchases')
-    invoices = InvoiceSerializer(many=True, read_only=True, source='user.invoices')
-    
+    purchases = PurchaseHistorySerializer(
+        many=True, read_only=True, source="user.purchases"
+    )
+    invoices = InvoiceSerializer(many=True, read_only=True, source="user.invoices")
+
     class Meta:
         model = UserProfile
         fields = [
