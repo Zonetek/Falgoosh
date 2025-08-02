@@ -18,10 +18,10 @@ __pycache__/
 */migrations/
 */migrations/*.pyc
 
-# Media and static files
-#/media
-#/staticfiles
-#/static
+Media and static files
+/media
+/staticfiles
+/static
 
 # Local settings
 

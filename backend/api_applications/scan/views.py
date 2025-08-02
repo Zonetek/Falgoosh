@@ -47,7 +47,6 @@ class SearchIPView(APIView):
                 target_ip = ip,
                 defaults={
                     "status" : "pending",
-                    "created_at": timezone.now(),
                 }
             )
             if created:
@@ -59,19 +58,20 @@ class SearchIPView(APIView):
                 )
 
             if ip_data:
-                scan.status = "running"
-                scan.started_at = timezone.now()
-                scan.save(update_fields=["status", "started_at", "updated_at"])
-                ScanHistory.objects.create(
-                        user=request.user,
-                        scan=scan,
-                        action="running",
-                        details={},
-                    )
-                
                 scan.status = "completed"
+                scan.started_at = timezone.now()
                 scan.completed_at = timezone.now()
-                scan.save(update_fields=["status", "completed_at", "updated_at"])
+                scan.country = ip_data.get("country")
+                scan.city = ip_data.get("city")
+                scan.region = ip_data.get("region")
+                scan.latitude = ip_data.get("latitude")
+                scan.longitude = ip_data.get("longitude")
+                scan.domain = ip_data.get("domain")
+                scan.organization = ip_data.get("organization")
+                scan.isp = ip_data.get("isp")
+                scan.asn = ip_data.get("asn")
+                scan.save()
+
                 ScanHistory.objects.create(
                     user=request.user,
                     scan=scan,
