@@ -1,5 +1,6 @@
 import logging
 import time
+from pymongo import UpdateOne
 
 from shared_libs import monogo_connections
 
@@ -16,14 +17,14 @@ def check_connection():
             time.sleep(3)
 
 
-def insert_scan_result(data: dict):
+def insert_many_scan_result(data: list):
 
     try:
         db = monogo_connections.connect_monogo()
-        result = db.scan_results.insert_one(data)
+        result = db.scan_results.insert_many(data)
         logging.info(
-            f"[db_operation.py] Data inserted with ID: {result.inserted_id}")
-        return result.inserted_id
+            f"[db_operation.py] Data inserted with ID")
+        return result.inserted_ids
 
     except Exception as e:
         logging.error(
@@ -45,27 +46,37 @@ def is_exists(data: str):
         return False
 
 
-def update_scan_result(data: dict):
+def update_scan_result(data: list):
     try:
         db = monogo_connections.connect_monogo()
-        logging.info(f"the data in update is {data}")
-        result = db.scan_results.update_one(
-            {"_id": data["_id"]},
-            {
-                "$set": {"ports": data["ports"], "last_update": data["last_update"]},
-                "$unset": {
-                    "finger_print": "",
-                    "general": "",
-                    "domain": "",
-                    "service_type": "",
-                    "vulnerability": "",
-                },
-            },
-            upsert=True,
-        )
+        operations = []
+        for doc in data:
+            logging.info(f"data looks like {type(doc)}")
+            operations.append(
+                UpdateOne(
+                    {"_id": doc["_id"]},
+                    {
+                        "$set": {
+                            "ports": doc["ports"],
+                            "last_update": doc["last_update"]
+                        },
+                        "$unset": {
+                            "finger_print": "",
+                            "general": "",
+                            "domain": "",
+                            "service_type": "",
+                            "vulnerability": "",
+                        },
+                    },
+                    upsert=True,
+                )
+            )
+        if operations:
+            result = db.scan_results.bulk_write(operations, ordered=False)
+            logging.info(f"Flushed {len(operations)} updates in one batch to db")
         return True
     except Exception as e:
-        logging.error(f"[db_operation.py] ERROR: Failed to update data : {e}")
+        logging.error(f"[db_operation.py] ERROR: Failed to bulk update data : {e}")
         return None
 
 

@@ -3,11 +3,14 @@ import logging
 import threading
 import time
 from datetime import datetime
-
+import os
 
 from . import port_scanner
 from . import db_operations
 from shared_models.schema import ScanResult
+
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "250"))
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -29,7 +32,8 @@ def generate_public_ipv4_ranges_stream(cidr_prefix=24):
 
 def daily_scan():
     from . import db_operations
-
+    insert_batch = []
+    update_batch = []
     while True:
         for ip_range in generate_public_ipv4_ranges_stream(24):
             logging.info(f"Scanning: {ip_range}")
@@ -39,17 +43,41 @@ def daily_scan():
                 if db_operations.is_exists(ip):
                     logging.info(f"{ip} is already exists")
                     scan_data = {"_id": ip, "ports": ports, "last_update": now}
-                    db_operations.update_scan_result(scan_data)
+                    update_batch.append(scan_data)
                 else:
                     scan_result = ScanResult(
                         _id=ip, ports=ports, last_update=now)
-                    inserted_id = db_operations.insert_scan_result(
-                        scan_result.dict(by_alias=True, exclude_none=True)
-                    )
-                    if inserted_id:
-                        logging.info(
-                            f"Successfully inserted scan result for {ip} with ID: {inserted_id}"
-                        )
+                    
+                    insert_batch.append(scan_result.model_dump(by_alias=True, exclude_none=True))
+                    logging.info(f"{insert_batch} apended")
+                
+                if len(insert_batch)+ len(update_batch) >= BATCH_SIZE:
+                    if insert_batch:
+                        try:
+                            db_operations.insert_many_scan_result(insert_batch)
+                            logging.info(f"Flushed {len(insert_batch)} documents to disk")
+                            insert_batch = []
+                        except Exception as e:
+                            logging.error(f"ERROR:{e} \ncan not Flushed {len(insert_batch)} documents to disk")
+
+                    if update_batch:
+                        try:
+                            logging.info(f"scanner.py data looks like{update_batch}")
+                            db_operations.update_scan_result(update_batch)
+                            logging.info(f"Flushed {len(update_batch)} documents to disk")
+                            update_batch = []
+                        except Exception as e:
+                            logging.error(f"ERROR:{e} \ncan not Flushed {len(update_batch)} documents to disk")
+                    
+            if len(insert_batch)+ len(update_batch) > 0:
+                if insert_batch:
+                        db_operations.insert_many_scan_result(insert_batch)
+                        logging.info(f"Flushed {len(insert_batch)} documents to disk")
+                        insert_batch = []
+                if update_batch:
+                        db_operations.update_scan_result(update_batch)
+                        logging.info(f"Flushed {len(update_batch)} documents to disk")
+                        update_batch = []
         logging.info(
             "Finished one full scan of IPv4 ranges. Sleeping for 24 hours.")
         time.sleep(86400)
@@ -57,7 +85,7 @@ def daily_scan():
 
 def rescan_unresponsive():
     from . import db_operations
-
+    update_batch = []
     while True:
         down_ips = db_operations.find_down_ips()
         if down_ips:
@@ -66,7 +94,17 @@ def rescan_unresponsive():
                 now = datetime.now()
                 update_data = {
                     "_id": result[0], "ports": result[1], "last_update": now}
-                db_operations.update_scan_result(update_data)
+                update_batch.append(update_data)
+            if update_batch:
+                    try:
+                        logging.info(f"scanner.py data looks like{update_batch}")
+                        db_operations.update_scan_result(update_batch)
+                        logging.info(f"Flushed {len(update_batch)} documents to disk")
+                        update_batch = []
+                    except Exception as e:
+                        logging.error(f"ERROR:{e} \ncan not Flushed {len(update_batch)} documents to disk")
+                    
+
 
             logging.info("Sleeping for 1 hour")
             time.sleep(3600)
@@ -77,10 +115,10 @@ def rescan_unresponsive():
 if __name__ == "__main__":
     db_operations.check_connection()
     t1 = threading.Thread(target=daily_scan, name="DailyScanThread")
-    t2 = threading.Thread(target=rescan_unresponsive,
-                          name="RescanUnresponsiveThread")
+    # t2 = threading.Thread(target=rescan_unresponsive,
+    #                       name="RescanUnresponsiveThread")
 
     t1.start()
-    t2.start()
+    # t2.start()
     t1.join()
-    t2.join()
+    # t2.join()
