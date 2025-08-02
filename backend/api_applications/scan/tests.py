@@ -103,3 +103,48 @@ class SearchIPTests(APITestCase):
         scan = Scan.objects.get(user=self.user, target_ip="203.0.113.5")
         histories = ScanHistory.objects.filter(scan=scan)
         self.assertTrue(histories.exists())
+
+class UserScansAndHistoryTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser",
+            password="pass1234",
+            email="test@example.com"
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+        self.scan = Scan.objects.create(
+            user=self.user,
+            target_ip="8.8.8.8",
+            target_ports="80,443",
+            status="completed"
+        )
+
+        ScanHistory.objects.create(
+            user=self.user,
+            scan=self.scan,
+            action="completed",
+            details={"note": "Test scan completed"}
+        )
+
+        self.url_scans = reverse("user_scans")  
+        self.url_history = reverse("user_scan_history", args=[self.scan.id])  
+
+    def test_list_user_scans(self):
+        resp = self.client.get(self.url_scans)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]["target_ip"], "8.8.8.8")
+
+    def test_list_user_scan_history(self):
+        resp = self.client.get(self.url_history)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]["action"], "completed")
+
+    def test_history_not_found_for_invalid_scan(self):
+        invalid_url = reverse("user_scan_history", args=[999])
+        resp = self.client.get(invalid_url)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", resp.data)
