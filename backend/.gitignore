@@ -109,3 +109,6 @@ MANIFEST
 *.swp
 *.swo
 .xmind
+
+# Resource files
+backend/api_applications/vulnerability/cve_data/

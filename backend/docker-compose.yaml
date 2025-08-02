@@ -95,9 +95,6 @@ services:
     depends_on:
       - mongodb
     working_dir: /app/api_applications
-    # dns:
-    #   - 8.8.8.8
-    #   - 1.1.1.1
 
 
   enrichments:
@@ -120,6 +117,26 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+  
+  
+  vulnerability:
+    build:
+      context: .
+      dockerfile: ./docker/vulnerability.Dockerfile
+    container_name: vulnerability
+    command: python -m vulnerability.main
+    restart: on-failure
+    networks:
+      - mynetwork
+    env_file:
+      - .env
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    depends_on:
+      - mongodb
+    working_dir: /app/api_applications
+
 
 networks:
   mynetwork:
