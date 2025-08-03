@@ -8,7 +8,7 @@ import os
 from . import port_scanner
 from . import db_operations
 from shared_models.schema import ScanResult
-
+from . import discovery_producer
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "250"))
 
 
@@ -47,37 +47,48 @@ def daily_scan():
                 else:
                     scan_result = ScanResult(
                         _id=ip, ports=ports, last_update=now)
-                    
-                    insert_batch.append(scan_result.model_dump(by_alias=True, exclude_none=True))
+
+                    insert_batch.append(scan_result.model_dump(
+                        by_alias=True, exclude_none=True))
                     logging.info(f"{insert_batch} apended")
-                
-                if len(insert_batch)+ len(update_batch) >= BATCH_SIZE:
+
+                if len(insert_batch) + len(update_batch) >= BATCH_SIZE:
                     if insert_batch:
                         try:
                             db_operations.insert_many_scan_result(insert_batch)
-                            logging.info(f"Flushed {len(insert_batch)} documents to disk")
+                            discovery_producer.send_batches(insert_batch)
+                            logging.info(
+                                f"Flushed {len(insert_batch)} documents to disk")
                             insert_batch = []
                         except Exception as e:
-                            logging.error(f"ERROR:{e} \ncan not Flushed {len(insert_batch)} documents to disk")
+                            logging.error(
+                                f"ERROR:{e} \ncan not Flushed {len(insert_batch)} documents to disk")
 
                     if update_batch:
                         try:
-                            logging.info(f"scanner.py data looks like{update_batch}")
+                            logging.info(
+                                f"scanner.py data looks like{update_batch}")
                             db_operations.update_scan_result(update_batch)
-                            logging.info(f"Flushed {len(update_batch)} documents to disk")
+                            discovery_producer.send_batches(update_batch)
+
+                            logging.info(
+                                f"Flushed {len(update_batch)} documents to disk")
                             update_batch = []
                         except Exception as e:
-                            logging.error(f"ERROR:{e} \ncan not Flushed {len(update_batch)} documents to disk")
-                    
-            if len(insert_batch)+ len(update_batch) > 0:
+                            logging.error(
+                                f"ERROR:{e} \ncan not Flushed {len(update_batch)} documents to disk")
+
+            if len(insert_batch) + len(update_batch) > 0:
                 if insert_batch:
-                        db_operations.insert_many_scan_result(insert_batch)
-                        logging.info(f"Flushed {len(insert_batch)} documents to disk")
-                        insert_batch = []
+                    db_operations.insert_many_scan_result(insert_batch)
+                    logging.info(
+                        f"Flushed {len(insert_batch)} documents to disk")
+                    insert_batch = []
                 if update_batch:
-                        db_operations.update_scan_result(update_batch)
-                        logging.info(f"Flushed {len(update_batch)} documents to disk")
-                        update_batch = []
+                    db_operations.update_scan_result(update_batch)
+                    logging.info(
+                        f"Flushed {len(update_batch)} documents to disk")
+                    update_batch = []
         logging.info(
             "Finished one full scan of IPv4 ranges. Sleeping for 24 hours.")
         time.sleep(86400)
@@ -96,15 +107,15 @@ def rescan_unresponsive():
                     "_id": result[0], "ports": result[1], "last_update": now}
                 update_batch.append(update_data)
             if update_batch:
-                    try:
-                        logging.info(f"scanner.py data looks like{update_batch}")
-                        db_operations.update_scan_result(update_batch)
-                        logging.info(f"Flushed {len(update_batch)} documents to disk")
-                        update_batch = []
-                    except Exception as e:
-                        logging.error(f"ERROR:{e} \ncan not Flushed {len(update_batch)} documents to disk")
-                    
-
+                try:
+                    logging.info(f"scanner.py data looks like{update_batch}")
+                    db_operations.update_scan_result(update_batch)
+                    logging.info(
+                        f"Flushed {len(update_batch)} documents to disk")
+                    update_batch = []
+                except Exception as e:
+                    logging.error(
+                        f"ERROR:{e} \ncan not Flushed {len(update_batch)} documents to disk")
 
             logging.info("Sleeping for 1 hour")
             time.sleep(3600)
