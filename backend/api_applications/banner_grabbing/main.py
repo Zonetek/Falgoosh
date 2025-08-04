@@ -1,6 +1,6 @@
 import logging
 
-from . import db_operations
+from . import banner_counsumer
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -9,7 +9,8 @@ logging.basicConfig(
 
 def main():
     while True:
-        db_operations.update_banners()
+        banner_counsumer.get_batches()
+        # db_operations.update_banners()
             
 
 

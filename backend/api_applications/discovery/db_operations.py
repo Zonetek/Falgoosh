@@ -51,7 +51,6 @@ def update_scan_result(data: list):
         db = monogo_connections.connect_monogo()
         operations = []
         for doc in data:
-            logging.info(f"data looks like {type(doc)}")
             operations.append(
                 UpdateOne(
                     {"_id": doc["_id"]},

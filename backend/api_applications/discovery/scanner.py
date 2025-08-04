@@ -9,7 +9,7 @@ from . import port_scanner
 from . import db_operations
 from shared_models.schema import ScanResult
 from . import discovery_producer
-BATCH_SIZE = int(os.getenv("BATCH_SIZE", "250"))
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "2"))
 
 
 logging.basicConfig(
@@ -56,7 +56,8 @@ def daily_scan():
                     if insert_batch:
                         try:
                             db_operations.insert_many_scan_result(insert_batch)
-                            discovery_producer.send_batches(insert_batch)
+                            discovery_producer.send_banner_batches(insert_batch)
+                            discovery_producer.send_enrich_batches(insert_batch)
                             logging.info(
                                 f"Flushed {len(insert_batch)} documents to disk")
                             insert_batch = []
@@ -69,7 +70,10 @@ def daily_scan():
                             logging.info(
                                 f"scanner.py data looks like{update_batch}")
                             db_operations.update_scan_result(update_batch)
-                            discovery_producer.send_batches(update_batch)
+                            discovery_producer.send_banner_batches(update_batch)
+                            logging.info(f"Sending enrich batch: {update_batch}")
+                            discovery_producer.send_enrich_batches(update_batch)
+
 
                             logging.info(
                                 f"Flushed {len(update_batch)} documents to disk")

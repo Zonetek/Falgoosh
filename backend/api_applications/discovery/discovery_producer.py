@@ -7,7 +7,7 @@ def json_serializer(obj):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
 
-def send_batches(targets_list, host='broker'):
+def send_banner_batches(targets_list, host='broker'):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
     channel = connection.channel()
     
@@ -35,3 +35,30 @@ def send_batches(targets_list, host='broker'):
     connection.close()
 
 
+
+def send_enrich_batches(targets_list, host='broker'):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
+    channel = connection.channel()
+    
+    channel.queue_declare(queue='enrich_tasks', durable=True)
+    
+    message = {
+        'targets': targets_list,
+        'timestamp': datetime.now(),
+        'batch_id': f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    }
+    
+    json_data = json.dumps(message, default=json_serializer)
+    
+    channel.basic_publish(
+        exchange='',
+        routing_key='enrich_tasks',
+        body=json_data,
+        properties=pika.BasicProperties(
+            delivery_mode=2,  # Persistent message
+        )
+    )
+    
+    print(f"Sent batch with {len(targets_list)} targets")
+    
+    connection.close()
