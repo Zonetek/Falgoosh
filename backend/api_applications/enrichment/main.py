@@ -1,10 +1,10 @@
-from . import db_operations
+from . import enrich_counsumer
 
 
 def main():
 
     while (True):
-        db_operations.update_enrichment()
+        enrich_counsumer.get_batches()
 
 
 if __name__ == "__main__":
