@@ -27,6 +27,7 @@ urlpatterns = [
     path("account/", include("api_applications.accounts.urls")),
     path("account/scan/", include("api_applications.scan.urls")),
     path("account/billing/", include("api_applications.billing.urls")),
+    path("account/tickets/", include("api_applications.tickets.urls")),
     path('api/admin/', include('api_applications.admin_tools.urls'))
     # path('auth/social/', include('dj_rest_auth.social_urls')),
 ]
