@@ -10,6 +10,8 @@ from api_applications.billing.serializers import (
 )
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth import get_user_model
+from .tasks import send_confirmation_email
+from allauth.account.models import EmailAddress
 
 User = get_user_model()
 
@@ -60,7 +62,21 @@ class CustomRegisterSerializer(RegisterSerializer):
         if User.objects.filter(email__iexact=value.strip()).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value.lower()
+    
+    def save(self, request):
+        user = super().save(request)
+        
+        # Make sure EmailAddress object is created and confirmed = False
+        email_obj, created = EmailAddress.objects.get_or_create(
+            user=user,
+            email=user.email,
+            defaults={"verified": False, "primary": True}
+        )
 
+        # Trigger async confirmation email
+        send_confirmation_email.delay(email_obj.pk)
+
+        return user
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
