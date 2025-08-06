@@ -41,7 +41,7 @@ class AdminTicketViewSet(viewsets.ModelViewSet):
 
     queryset = Ticket.objects.all().order_by("-created_at")
     serializer_class = TicketSerializer
-    permission_classes = [permissions.IsAuthenticated, HasGroup("super_admin")] 
+    permission_classes = [permissions.IsAuthenticated, HasGroup("ticket_admin")] 
 
     def get_queryset(self):
         queryset = self.queryset

@@ -42,11 +42,3 @@ class TicketCreateSerializer(serializers.ModelSerializer):
             "title",
             "description"
         ]
-
-    def create(self, validated_data):
-        request = self.context.get("request")
-        ticket = Ticket.objects.create(
-            user=request.user,
-            **validated_data
-        )
-        return ticket

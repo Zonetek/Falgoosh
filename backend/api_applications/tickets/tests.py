@@ -51,15 +51,16 @@ class TicketCreateSerializerTests(TestCase):
             username="creator", password="pass", email="creator@example.com"
         )
 
+
     def test_create_ticket_success(self):
         serializer = TicketCreateSerializer(
-            data={"title": "New Ticket", "description": "New description"},
-            context={"request": type("req", (), {"user": self.user})}
+            data={"title": "New Ticket", "description": "New description"}
         )
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        ticket = serializer.save()
+        ticket = serializer.save(user=self.user)
         self.assertEqual(ticket.user, self.user)
         self.assertEqual(ticket.title, "New Ticket")
+
 
     def test_create_ticket_missing_fields(self):
         serializer = TicketCreateSerializer(data={})
