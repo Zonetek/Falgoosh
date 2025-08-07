@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     "api_applications.sessions_management.apps.SessionsManagementConfig",
     "api_applications.admin_tools.apps.AdminToolsConfig",
     "api_applications.shared_models.apps.SharedModelsConfig",
+    "api_applications.tickets.apps.TicketsConfig",
+
 ]
 
 MIDDLEWARE = [
