@@ -1,17 +1,21 @@
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth.models import update_last_login
-from config.settings.base import UPDATE_LAST_LOGIN
 import uuid
-from rest_framework import serializers
-from api_applications.shared_models.models import UserProfile
-from api_applications.billing.serializers import (
-    PurchaseHistorySerializer,
-    InvoiceSerializer,
-)
+
+from allauth.account.models import EmailAddress
+from config.settings.base import UPDATE_LAST_LOGIN
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import update_last_login
+from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from api_applications.billing.serializers import (
+    InvoiceSerializer,
+    PurchaseHistorySerializer,
+    SubscriptionSerializer,
+)
+from api_applications.shared_models.models.user import UserProfile
+
 from .tasks import send_confirmation_email
-from allauth.account.models import EmailAddress
 
 User = get_user_model()
 
@@ -62,15 +66,13 @@ class CustomRegisterSerializer(RegisterSerializer):
         if User.objects.filter(email__iexact=value.strip()).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value.lower()
-    
+
     def save(self, request):
         user = super().save(request)
-        
+
         # Make sure EmailAddress object is created and confirmed = False
         email_obj, created = EmailAddress.objects.get_or_create(
-            user=user,
-            email=user.email,
-            defaults={"verified": False, "primary": True}
+            user=user, email=user.email, defaults={"verified": False, "primary": True}
         )
 
         # Trigger async confirmation email
@@ -78,8 +80,12 @@ class CustomRegisterSerializer(RegisterSerializer):
 
         return user
 
+
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
+    membership = SubscriptionSerializer(read_only=True)
+    remaining_scans = serializers.SerializerMethodField()
+    remaining_api_calls = serializers.SerializerMethodField()
     purchases = PurchaseHistorySerializer(
         many=True, read_only=True, source="user.purchases"
     )
@@ -91,11 +97,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "is_verified",
-            "membership",
-            "stripe_customer_id",
+            "subscriptions",
             "purchases",
-            "invoices",
             "session_id",
             "scan_limit",
+            "scans_used",
+            "api_calls_used",
+            "remaining_scans",
+            "remaining_api_calls",
         ]
         read_only_fields = ["id", "user", "session_id"]
+
+    def get_remaining_scans(self, obj):
+        return obj.remaining_scans()
+
+    def get_remaining_api_calls(self, obj):
+        return obj.remaining_api_calls()
