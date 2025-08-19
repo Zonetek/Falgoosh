@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'django.contrib.sites',
     # Third-party apps
     "allauth",
     "allauth.account",
@@ -80,7 +81,7 @@ AUTH_USER_MODEL = 'shared_models.CustomUser'
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR.parent / "utils" / "templates"],
+        "DIRS": ["/backend/utils/templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -159,8 +160,6 @@ SIMPLE_JWT = {
 }
 
 
-ACCOUNT_EMAIL_VERIFICATION = "none"  # or "optional" or "mandatory"
-ACCOUNT_LOGIN_METHODS = {"username"}
 UPDATE_LAST_LOGIN = True
 
 # Internationalization
