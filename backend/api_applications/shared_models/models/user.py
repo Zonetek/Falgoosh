@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import (
     AbstractBaseUser,
     Permission,
@@ -68,9 +70,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     # Ensure these fields are defined for the manager to work
-    EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
 
     class Meta:
         verbose_name_plural = "Users"
@@ -83,23 +85,43 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class UserProfile(models.Model):
-    MEMBERSHIP_CHOICES = [
-        ('free', 'Free'),
-        ('member', 'Member'),
-        ('pro', 'Pro'),
-        ('premium', 'Premium'),
-    ]
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="profile"
+    )
 
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    membership = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='free')
-    stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
-    scan_limit = models.IntegerField(default=0)
-    api_calls_remaining = models.IntegerField(default=100)
+    # Lifetime counters (never reset) — useful for analytics
+    total_scans = models.PositiveBigIntegerField(default=0)
+    total_api_calls = models.PositiveBigIntegerField(default=0)
+
+    # Security & account metadata
     is_verified = models.BooleanField(default=False)
+    failed_login_attempts = models.PositiveSmallIntegerField(default=0)
+    last_password_change = models.DateTimeField(null=True, blank=True)
+    two_factor_enabled = models.BooleanField(default=False)
+
+    # last login/device info
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
+    last_login_country = models.CharField(max_length=2, null=True, blank=True)
+    last_device = models.CharField(max_length=150, null=True, blank=True)
+
+    # flexible user prefs
+    preferences = models.JSONField(default=dict, blank=True)
+
+    # soft-delete / anonymization hooks
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    anonymized = models.BooleanField(default=False)
+    anonymized_at = models.DateTimeField(null=True, blank=True)
+
+    # session id for single-session or device tracking
     session_id = models.UUIDField(default=uuid.uuid4, editable=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("User Profile")
+        verbose_name_plural = _("User Profiles")
 
     def __str__(self):
         return f"{self.user.username} Profile"
@@ -109,3 +131,116 @@ class UserProfile(models.Model):
 
     def get_email(self):
         return self.user.email
+
+    @property
+    def subscription(self):
+        """Return the user's subscription instance if it exists (or None)."""
+        return getattr(self.user, "subscription", None)
+
+    def has_active_subscription(self) -> bool:
+        sub = self.subscription
+        return bool(sub and sub.is_active())
+
+    def remaining_scans(self) -> int:
+        """Delegate to subscription.remaining_scans() when available, otherwise 0."""
+        sub = self.subscription
+        if not sub:
+            return 0
+        return sub.remaining_scans()
+
+    def remaining_api_calls(self) -> int:
+        sub = self.subscription
+        if not sub:
+            return 0
+        return sub.remaining_queries()
+
+    def consume_scan(self, count: int = 1) -> bool:
+        """Consume scan quota on the active subscription and update lifetime counters.
+
+        Returns True when consumption succeeded, False otherwise.
+        """
+        sub = self.subscription
+        if not sub or not sub.is_active():
+            return False
+        ok = sub.consume_scans(count=count)
+        if ok:
+            # update lifetime counter
+            self.total_scans = models.F("total_scans") + count
+            self.save(update_fields=["total_scans"])
+            self.refresh_from_db(fields=["total_scans"])
+        return ok
+
+    def consume_api_calls(self, count: int = 1) -> bool:
+        sub = self.subscription
+        if not sub or not sub.is_active():
+            return False
+        ok = sub.consume_queries(count=count)
+        if ok:
+            self.total_api_calls = models.F("total_api_calls") + count
+            self.save(update_fields=["total_api_calls"])
+            self.refresh_from_db(fields=["total_api_calls"])
+        return ok
+
+    def reset_profile_usage(self):
+        """Reset lifetime counters and subscription usage (for admin/maintenance).
+
+        Use with care — keeping lifetime counters is recommended for analytics.
+        """
+        self.total_scans = 0
+        self.total_api_calls = 0
+        self.save(update_fields=["total_scans", "total_api_calls"])
+        sub = self.subscription
+        if sub:
+            sub.reset_usage()
+
+    def mark_deleted(self, anonymize: bool = True):
+        """Soft-delete the profile; optionally anonymize PII.
+
+        This keeps invoices and purchase history for compliance while removing
+        identifying information from the user-facing profile.
+        """
+
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=["is_deleted", "deleted_at"])
+
+        if anonymize:
+            # remove PII from profile only — do not delete invoices/purchase history
+            self.anonymized = True
+            self.anonymized_at = timezone.now()
+            self.preferences = {}
+            self.last_login_ip = None
+            self.last_login_country = None
+            self.last_device = None
+            self.save(
+                update_fields=[
+                    "anonymized",
+                    "anonymized_at",
+                    "preferences",
+                    "last_login_ip",
+                    "last_login_country",
+                    "last_device",
+                ]
+            )
+
+            # Optionally anonymize the User record (email/username) — administratively controlled
+            try:
+                user = self.user
+                if hasattr(user, "email"):
+                    user.email = f"deleted+{user.id}@example.invalid"
+                if hasattr(user, "username"):
+                    user.username = f"deleted_{user.id}"
+                user.is_active = False
+                user.save(update_fields=["email", "username", "is_active"])
+            except Exception:
+                # swallow errors — keep records stable
+                pass
+
+    def restore_from_deletion(self):
+        self.is_deleted = False
+        self.anonymized = False
+        self.deleted_at = None
+        self.anonymized_at = None
+        self.save(
+            update_fields=["is_deleted", "anonymized", "deleted_at", "anonymized_at"]
+        )
