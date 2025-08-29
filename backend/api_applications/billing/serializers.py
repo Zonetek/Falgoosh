@@ -1,9 +1,10 @@
 from rest_framework import serializers
+
 from api_applications.shared_models.models.billing import (
+    Invoice,
     Plan,
     PlanPrice,
     PurchaseHistory,
-    Invoice,
     Subscription,
 )
 
@@ -82,4 +83,3 @@ class PurchaseHistorySerializer(serializers.ModelSerializer):
             "expires_at",
             "invoice",
         ]
-
