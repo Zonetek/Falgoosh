@@ -1,10 +1,9 @@
-import json
 import logging
 import uuid
 from typing import Any, Dict, Optional
 
 from django.conf import settings
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -14,7 +13,6 @@ from api_applications.shared_models.models.billing import Plan, PlanPrice
 
 from .serializers import InvoiceSerializer, PlanSerializer
 from .services import (
-    attempt_consume_scan_for_user,
     create_invoice,
     mark_webhook_processed,
 )
@@ -60,20 +58,6 @@ class CreateInvoiceView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class PerformScanView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        ok = attempt_consume_scan_for_user(request.user, count=1)
-        if not ok:
-            return Response(
-                {"detail": "Scan quota exhausted or no active subscription"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        # schedule scan job (Celery) -> return job id to client
-        return JsonResponse({"detail": "Scan queued"})
-
-
 class ProviderWebhookView(APIView):
 
     def post(self, request: HttpRequest, provider: str) -> Response:
@@ -96,7 +80,9 @@ class ProviderWebhookView(APIView):
                 )
 
             # Extract event ID
-            provider_event_id = self._extract_event_id(payload, provider_config, request)
+            provider_event_id = self._extract_event_id(
+                payload, provider_config, request
+            )
             if not provider_event_id:
                 logger.error("Could not extract event ID from payload")
                 return Response(
@@ -159,11 +145,11 @@ class ProviderWebhookView(APIView):
 
             # Get client IP
             client_ip = self._get_client_ip(request)
-            
+
             is_valid, payload = verifier(
                 provider, request.body, dict(request.META), client_ip
             )
-        
+
             if not is_valid:
                 logger.warning(f"Invalid webhook signature for provider: {provider}")
                 return None
@@ -175,25 +161,25 @@ class ProviderWebhookView(APIView):
             return None
 
     def _get_client_ip(self, request: HttpRequest) -> str:
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
-            return x_forwarded_for.split(',')[0].strip()
-    
-        x_real_ip = request.META.get('HTTP_X_REAL_IP')
+            return x_forwarded_for.split(",")[0].strip()
+
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
         if x_real_ip:
             return x_real_ip
-    
-        return request.META.get('REMOTE_ADDR', '127.0.0.1')
+
+        return request.META.get("REMOTE_ADDR", "127.0.0.1")
 
     def _extract_event_id(
         self, payload: Dict[str, Any], config: Dict[str, Any], request: HttpRequest
     ) -> Optional[str]:
-        
+
         if request and config.get("provider") == "github":
             delivery_id = request.headers.get("X-GitHub-Delivery")
             if delivery_id:
                 return delivery_id
-        
+
         event_id_path = config.get("event_id_path", "id")
 
         event_id = WebhookPayloadExtractor.extract_nested_value(payload, event_id_path)
@@ -205,10 +191,14 @@ class ProviderWebhookView(APIView):
             if "issue" in payload:
                 event_id = f"github_issue_{payload['issue']['id']}_{payload['action']}"
             elif "pull_request" in payload:
-                event_id = f"github_pr_{payload['pull_request']['id']}_{payload['action']}"
+                event_id = (
+                    f"github_pr_{payload['pull_request']['id']}_{payload['action']}"
+                )
             elif "repository" in payload:
-                event_id = f"github_repo_{payload['repository']['id']}_{payload['action']}"
-        
+                event_id = (
+                    f"github_repo_{payload['repository']['id']}_{payload['action']}"
+                )
+
         return str(event_id) if event_id else None
 
     def _store_raw_webhook(
