@@ -18,7 +18,7 @@ echo "🗃️ Collecting static files..."
 python manage.py collectstatic --noinput
 
 echo " Applying seeds of memeberships"
-python manage.py seed_memberships --noinput
+python manage.py seed_memberships
 
 # Run the app (adjust if you're using gunicorn)
 echo "🚀 Starting server..."
