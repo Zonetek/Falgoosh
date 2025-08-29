@@ -54,7 +54,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5433:5432"
+      - "0:5433"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -186,9 +186,7 @@ services:
     depends_on:
       - mongodb
     working_dir: /app/api_applications
-    # dns:
-    #   - 8.8.8.8
-    #   - 1.1.1.1
+
 
   enrichments:
     build:
@@ -210,6 +208,26 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+
+
+  vulnerability:
+      build:
+        context: .
+        dockerfile: ./docker/vulnerability.Dockerfile
+      container_name: vulnerability
+      command: python -m vulnerability.main
+      restart: on-failure
+      networks:
+        - mynetwork
+      env_file:
+        - .env
+      cap_add:
+        - NET_RAW
+        - NET_ADMIN
+      depends_on:
+        - mongodb
+      working_dir: /app/api_applications
+
 
 networks:
   mynetwork:
