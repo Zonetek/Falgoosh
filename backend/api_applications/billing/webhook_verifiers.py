@@ -1,17 +1,18 @@
 import base64
-import json
-import os
-import time
 import hashlib
 import hmac
+import json
 import logging
-from functools import lru_cache, wraps
-from typing import Tuple
+import os
+import time
 from collections import defaultdict, deque
+from functools import lru_cache, wraps
 from threading import Lock
+from typing import Tuple
+
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
 from django.utils.crypto import constant_time_compare
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding
 
 logger = logging.getLogger(__name__)
 
@@ -297,7 +298,9 @@ def verify_hmac_sha256(
         return True, payload
 
     except Exception as e:
-        logger.error(f"HMAC verification error for provider {provider} from IP {client_ip}: {e}")
+        logger.error(
+            f"HMAC verification error for provider {provider} from IP {client_ip}: {e}"
+        )
         return False, {}
 
 
