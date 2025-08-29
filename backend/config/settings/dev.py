@@ -64,6 +64,19 @@ LOGGING = {
         "handlers": ["console"],
         "level": "DEBUG",
     },
+    "loggers": {
+        # Silence pymongo spam
+        "pymongo": {
+            "level": "WARNING",  # only warnings & errors
+            "handlers": ["console"],
+            "propagate": False,
+        },
+        "pymongo.topology": {
+            "level": "ERROR",  # show only errors
+            "handlers": ["console"],
+            "propagate": False,
+        },
+    },
 }
 
 # Testing configuration
