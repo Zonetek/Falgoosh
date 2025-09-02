@@ -22,10 +22,14 @@ from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("auth/registration/", include("dj_rest_auth.registration.urls")),
-    path("auth/", include("dj_rest_auth.urls")),
+    path("account/auth/registration/", include("dj_rest_auth.registration.urls")),
+    path("account/auth/", include("dj_rest_auth.urls")),
     path("account/", include("api_applications.accounts.urls")),
     path("account/scan/", include("api_applications.scan.urls")),
+
+    path("account/billing/", include("api_applications.billing.urls")),
+    path("account/tickets/", include("api_applications.tickets.urls")),
+    path('api/admin/', include('api_applications.admin_tools.urls'))
     # path('auth/social/', include('dj_rest_auth.social_urls')),
 ]
 

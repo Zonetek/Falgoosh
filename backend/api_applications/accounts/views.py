@@ -1,3 +1,6 @@
+import logging
+
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -5,8 +8,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from api_applications.shared_models.models import UserProfile, CustomUser
+from api_applications.shared_models.models import UserProfile
+
 from .serializers import CustomTokenObtainPairSerializer, UserProfileSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class TokenCookieSetter:
@@ -64,4 +70,6 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         # Return the profile of the authenticated user
-        return self.get_queryset().first()
+        return get_object_or_404(
+            UserProfile.objects.select_related("user"), user=self.request.user
+        )
