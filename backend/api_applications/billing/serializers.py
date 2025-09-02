@@ -1,34 +1,85 @@
 from rest_framework import serializers
+
 from api_applications.shared_models.models.billing import (
-    SubscriptionPlan,
-    PurchaseHistory,
     Invoice,
+    Plan,
+    PlanPrice,
+    PurchaseHistory,
+    Subscription,
 )
 
 
-class CheckoutInputSerializer(serializers.Serializer):
-    plan_id = serializers.IntegerField()
-
-
-class SubscriptionPlanSerializer(serializers.ModelSerializer):
+class PlanPriceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SubscriptionPlan
-        fields = ["id", "name", "price", "description"]
+        model = PlanPrice
+        fields = ["currency", "amount"]
 
 
-class PurchaseHistorySerializer(serializers.ModelSerializer):
-    plan = SubscriptionPlanSerializer(read_only=True)
+class PlanSerializer(serializers.ModelSerializer):
+    prices = PlanPriceSerializer(many=True, read_only=True)
 
     class Meta:
-        model = PurchaseHistory
-        fields = ["id", "plan", "amount", "transaction_id", "timestamp", "success"]
+        model = Plan
+        fields = [
+            "id",
+            "name",
+            "display_name",
+            "description",
+            "scan_limit",
+            "query_limit",
+            "os_match",
+            "os_family",
+            "accuracy",
+            "device_type",
+            "vendor",
+            "geo",
+            "monitored_ips",
+            "membership",
+            "duration_days",
+            "prices",
+        ]
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    plan = PlanSerializer(read_only=True)
+
+    class Meta:
+        model = Subscription
+        fields = ["plan", "start_date", "end_date", "scans_used", "queries_used"]
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
-        fields = ["id", "invoice_number", "metadata", "created_at"]
+        fields = [
+            "invoice_uuid",
+            "user",
+            "invoice_number",
+            "plan",
+            "amount",
+            "currency",
+            "status",
+            "payment_gateway",
+            "issued_at",
+            "transaction_id",
+            "created_at",
+            "paid_at",
+        ]
 
 
-class FakePaymentSerializer(serializers.Serializer):
-    plan_id = serializers.IntegerField()
+class PurchaseHistorySerializer(serializers.ModelSerializer):
+    plan = SubscriptionSerializer(read_only=True)
+
+    class Meta:
+        model = PurchaseHistory
+        fields = [
+            "user",
+            "plan_name",
+            "plan_id",
+            "price",
+            "currency",
+            "payment_status",
+            "purchased_at",
+            "expires_at",
+            "invoice",
+        ]

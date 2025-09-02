@@ -11,7 +11,11 @@ class Scan(models.Model):
     ]
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="scans"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="scans",
+        null=True,  # allow NULL for anonymous
+        blank=True,
     )
     target_ip = models.GenericIPAddressField()
     target_ports = models.TextField(help_text="Comma-separated port numbers or ranges")
@@ -54,7 +58,11 @@ class Scan(models.Model):
         ]
 
     def __str__(self):
-        return f"Scan {self.pk} - {self.target_ip} - {self.user.username}"
+        return (
+            f"Scan {self.pk} - {self.target_ip} - {self.user.username}"
+            if self.user is not None
+            else f"Scan {self.pk} - {self.target_ip} - Anonymous User -"
+        )
 
     @property
     def location_display(self):
@@ -97,7 +105,11 @@ class Scan(models.Model):
 
 class ScanHistory(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="scan_history"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="scan_history",
+        null=True,  # allow anonymous history
+        blank=True,
     )
     scan = models.ForeignKey(Scan, on_delete=models.CASCADE)
     action = models.CharField(max_length=50)
