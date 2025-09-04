@@ -20,13 +20,7 @@ logging.basicConfig(
 def generate_public_ipv4_ranges_stream(cidr_prefix=24):
     all_space = ipaddress.IPv4Network("0.0.0.0/0")
     for subnet in all_space.subnets(new_prefix=cidr_prefix):
-        if subnet.is_global and not (
-            subnet.is_private
-            or subnet.is_loopback
-            or subnet.is_link_local
-            or subnet.is_multicast
-            or subnet.is_reserved
-        ):
+        if subnet.is_global:
             yield str(subnet)
 
 
@@ -130,10 +124,10 @@ def rescan_unresponsive():
 if __name__ == "__main__":
     db_operations.check_connection()
     t1 = threading.Thread(target=daily_scan, name="DailyScanThread")
-    # t2 = threading.Thread(target=rescan_unresponsive,
-    #                       name="RescanUnresponsiveThread")
+    t2 = threading.Thread(target=rescan_unresponsive,
+                          name="RescanUnresponsiveThread")
 
     t1.start()
-    # t2.start()
+    t2.start()
     t1.join()
-    # t2.join()
+    t2.join()
