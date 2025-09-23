@@ -1,5 +1,4 @@
 import logging
-import uuid
 from typing import Any, Dict, Optional
 
 from django.conf import settings
@@ -9,7 +8,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api_applications.shared_models.models.billing import Plan, PlanPrice
+from api_applications.shared_models.models.billing import Plan, PlanPrice, PurchaseHistory
 
 from .serializers import InvoiceSerializer, PlanSerializer
 from .services import (
@@ -45,15 +44,13 @@ class CreateInvoiceView(APIView):
             )
 
         invoice = create_invoice(
-            request.user,
-            plan,
-            price.amount,
-            currency,
-            gateway,
+            user=request.user,
+            plan=plan,
+            amount=price.amount,
+            currency=currency,
+            gateway=gateway,
         )
-        invoice.invoice_number = f"INV-{uuid.uuid4().hex[:8].upper()}"  # e.g. "001000",
-        invoice.invoice_uuid = str(uuid.uuid4())
-
+        print(invoice)
         serializer = InvoiceSerializer(invoice)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
