@@ -148,7 +148,9 @@ class Invoice(models.Model):
     ]
 
     invoice_uuid = models.UUIDField(null=True, unique=True, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="invoices"
+    )
     invoice_number = models.CharField(
         max_length=50, unique=True, null=True, editable=False
     )
@@ -177,20 +179,33 @@ class Invoice(models.Model):
 
 class PurchaseHistory(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="purchase_history",
     )
-    plan_name = models.CharField(max_length=100)
-    plan_id = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    currency = models.CharField(max_length=10, default="USD")
-    payment_status = models.CharField(
-        max_length=20, choices=Invoice.STATUS_CHOICES, default="pending"
+    plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True)
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="purchase_history",
+    )
+    invoice = models.OneToOneField(
+        Invoice, on_delete=models.CASCADE, related_name="purchase_record"
     )
     purchased_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(blank=True, null=True)
-    invoice = models.OneToOneField(
-        Invoice, on_delete=models.SET_NULL, blank=True, null=True
-    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Purchase History"
+        verbose_name_plural = "Purchase Histories"
+        ordering = ["-purchased_at"]
+
+    def __str__(self):
+        return f"{self.user} purchased {self.plan} on {self.purchased_at.date()}"
 
 
 class WebhookEvent(models.Model):
