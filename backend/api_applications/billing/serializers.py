@@ -68,18 +68,18 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
 
 class PurchaseHistorySerializer(serializers.ModelSerializer):
-    plan = SubscriptionSerializer(read_only=True)
+    invoice = InvoiceSerializer(read_only=True)
+    plan = PlanSerializer(read_only=True)
+    subscription = SubscriptionSerializer(read_only=True)
 
     class Meta:
         model = PurchaseHistory
         fields = [
-            "user",
-            "plan_name",
-            "plan_id",
-            "price",
-            "currency",
-            "payment_status",
+            "plan",
+            "subscription",
+            "invoice",
             "purchased_at",
             "expires_at",
-            "invoice",
+            "notes",
+            
         ]
