@@ -22,7 +22,7 @@ __pycache__/
 /media
 /staticfiles
 /static
-
+/mongo_data
 # Local settings
 
 

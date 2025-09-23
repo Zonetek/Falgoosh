@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any, Optional, Tuple, Union
+import uuid
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
@@ -10,6 +11,7 @@ from django.utils import timezone
 from api_applications.shared_models.models.billing import (
     Invoice,
     Plan,
+    PurchaseHistory,
     Subscription,
     WebhookEvent,
 )
@@ -124,6 +126,16 @@ def create_invoice(
             transaction_id=transaction_id,
         )
 
+        invoice.invoice_number = f"INV-{uuid.uuid4().hex[:8].upper()}"  # e.g. "001000"
+        invoice.invoice_uuid = str(uuid.uuid4())
+        invoice.save(update_fields=["invoice_number", "invoice_uuid"])
+
+        PurchaseHistory.objects.create(
+            user=user,
+            plan=plan,
+            invoice=invoice,
+        )
+
         logger.info(
             f"Invoice created - ID: {invoice.pk}, User: {user.pk}, "
             f"Plan: {plan.pk}, Amount: {decimal_amount} {currency}"
@@ -167,7 +179,6 @@ def activate_or_extend_subscription(
     try:
         now = timezone.now()
 
-        # Use select_for_update to prevent race conditions
         subscription, created = Subscription.objects.select_for_update().get_or_create(
             user=user,
             defaults={

@@ -1,6 +1,10 @@
 import pika
+import os
 import json
 from datetime import datetime
+
+rabbit_user = os.getenv("RABBIT_USER", "")
+rabbit_pass = os.getenv("RABBIT_PASSWORD", "")
 
 
 def json_serializer(obj):
@@ -9,8 +13,17 @@ def json_serializer(obj):
     raise TypeError(f"Type {type(obj)} not serializable")
 
 
-def send_vuln_batches(targets_list, host='broker'):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
+def send_vuln_batches(targets_list, host='rabbitmq'):
+    credentials = pika.PlainCredentials(rabbit_user, rabbit_pass)
+    parameters = pika.ConnectionParameters(
+        host=host,
+        port=5672,  # use container port
+        credentials=credentials,
+        heartbeat=60,
+        blocked_connection_timeout=30,
+    )
+    
+    connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
     channel.queue_declare(queue='vuln_tasks', durable=True)

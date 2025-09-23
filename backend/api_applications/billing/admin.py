@@ -44,7 +44,6 @@ class SubscriptionAdmin(admin.ModelAdmin):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = (
         "invoice_number",
-        "invoice_uuid",
         "user",
         "plan",
         "amount",
@@ -54,6 +53,7 @@ class InvoiceAdmin(admin.ModelAdmin):
         "created_at",
         "issued_at",
     )
+    readonly_fields = ("invoice_number", "invoice_uuid", "issued_at", "created_at")
 
 
 @admin.register(WebhookEvent)

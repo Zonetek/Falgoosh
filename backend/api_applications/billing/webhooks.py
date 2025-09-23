@@ -5,9 +5,9 @@ from typing import Any, Optional
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
-from api_applications.shared_models.models.billing import Plan
+from api_applications.shared_models.models.billing import Invoice, Plan
 
-from .services import activate_or_extend_subscription, create_invoice
+from .services import activate_or_extend_subscription
 
 logger = logging.getLogger(__name__)
 base_user = get_user_model()
@@ -136,15 +136,15 @@ class WebhookProcessor:
             return False
 
         # Get user and plan objects
-        user = self._get_user(user_id)
-        plan = self._get_plan(plan_id)
+        user = self._get_user(user_id) if isinstance(user_id, int) else None
+        plan = self._get_plan(plan_id) if isinstance(plan_id, str) else None
 
         if not user or not plan:
             logger.warning(f"User or plan not found - user: {user}, plan: {plan}")
             return False
 
         # Create invoice and activate subscription
-        return self._create_invoice_and_activate(user, plan, amount, currency)
+        return self._update_invoice_and_activate(user, plan, amount, currency)
 
     def _get_user(self, user_id: int):
         """Get user by ID with error handling"""
@@ -168,19 +168,22 @@ class WebhookProcessor:
             logger.error(f"Error fetching plan {plan_id}: {e}")
             return None
 
-    def _create_invoice_and_activate(
+    def _update_invoice_and_activate(
         self, user: Any, plan: Plan, amount: Decimal, currency: str
     ) -> bool:
-        """Create invoice and activate subscription"""
+        """Update invoice and activate subscription"""
         try:
-            # Create invoice
-            invoice = create_invoice(
+            # Look for an existing pending invoice
+            invoice, created = Invoice.objects.get_or_create(
                 user=user,
                 plan=plan,
-                amount=amount,
-                currency=currency,
-                gateway=self.provider,
-                transaction_id=self.provider_event_id,
+                status=Invoice.STATUS_PENDING,  # only update if still pending
+                defaults={
+                    "amount": amount,
+                    "currency": currency,
+                    "payment_gateway": self.provider,
+                    "transaction_id": self.provider_event_id,
+                },
             )
 
             # Mark invoice as paid

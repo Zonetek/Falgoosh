@@ -9,11 +9,10 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from api_applications.billing.serializers import (
-    InvoiceSerializer,
     PurchaseHistorySerializer,
     SubscriptionSerializer,
 )
-from api_applications.shared_models.models.user import UserProfile
+from api_applications.shared_models.models.user import CustomUser, UserProfile
 
 from .tasks import send_confirmation_email
 
@@ -81,35 +80,30 @@ class CustomRegisterSerializer(RegisterSerializer):
         return user
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["id", "username", "email"]
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
-    membership = SubscriptionSerializer(read_only=True)
-    remaining_scans = serializers.SerializerMethodField()
-    remaining_api_calls = serializers.SerializerMethodField()
-    purchases = PurchaseHistorySerializer(
-        many=True, read_only=True, source="user.purchases"
+    user = UserSerializer(read_only=True)
+    subscription = SubscriptionSerializer(
+        source="user.subscription", read_only=True
     )
-    invoices = InvoiceSerializer(many=True, read_only=True, source="user.invoices")
+    purchase_history = PurchaseHistorySerializer(
+        source="user.purchase_history", many=True, read_only=True
+    )
 
     class Meta:
         model = UserProfile
         fields = [
-            "id",
             "user",
+            "total_scans",
+            "total_api_calls",
             "is_verified",
-            "subscriptions",
-            "purchases",
-            "session_id",
-            "scan_limit",
-            "scans_used",
-            "api_calls_used",
-            "remaining_scans",
-            "remaining_api_calls",
+            "two_factor_enabled",
+            "subscription",
+            "purchase_history",
         ]
-        read_only_fields = ["id", "user", "session_id"]
-
-    def get_remaining_scans(self, obj):
-        return obj.remaining_scans()
-
-    def get_remaining_api_calls(self, obj):
-        return obj.remaining_api_calls()
+        read_only_fields = ["id", "user"]
