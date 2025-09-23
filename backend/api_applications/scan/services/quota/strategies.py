@@ -27,16 +27,3 @@ class QueryQuotaStrategy(QuotaStrategy):
             ).update(queries_used=F("queries_used") + count)
             > 0
         )
-
-
-# Example: Report downloads, just for demo
-class ReportQuotaStrategy(QuotaStrategy):
-    def consume(self, user, count=1) -> bool:
-        return (
-            Subscription.objects.filter(
-                user=user,
-                end_date__gte=timezone.now(),
-                plan__report_limit__gte=F("reports_used") + count,
-            ).update(reports_used=F("reports_used") + count)
-            > 0
-        )
