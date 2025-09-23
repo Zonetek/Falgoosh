@@ -33,8 +33,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "127.0.0.1:5673:5672"
-      - "127.0.0.1:15673:15672"
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD}
@@ -184,7 +184,10 @@ services:
       - NET_RAW
       - NET_ADMIN
     depends_on:
-      - mongodb
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
     working_dir: /app/api_applications
 
 
