@@ -1,11 +1,10 @@
-from .strategies import ScanQuotaStrategy, QueryQuotaStrategy, ReportQuotaStrategy
+from .strategies import ScanQuotaStrategy, QueryQuotaStrategy
 
 
 class QuotaService:
     STRATEGIES = {
         "scan": ScanQuotaStrategy(),
         "query": QueryQuotaStrategy(),
-        "report": ReportQuotaStrategy(),
     }
 
     @classmethod
