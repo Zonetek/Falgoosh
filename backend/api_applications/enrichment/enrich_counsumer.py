@@ -1,8 +1,11 @@
 import pika
+import os
 import json
 import logging
 from . import db_operations
 
+rabbit_user = os.getenv("RABBIT_USER", "")
+rabbit_pass = os.getenv("RABBIT_PASSWORD", "")
 
 def callback(ch, method, properties, body):
     try:
@@ -25,8 +28,16 @@ def callback(ch, method, properties, body):
 
 def get_batches():
     try:
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters('broker'))
+        credentials = pika.PlainCredentials(rabbit_user, rabbit_pass)
+        parameters = pika.ConnectionParameters(
+        host="rabbitmq",
+        port=5672,  # use container port
+        credentials=credentials,
+        heartbeat=60,
+        blocked_connection_timeout=30,
+        )
+        
+        connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
         channel.queue_declare(queue='vuln_tasks', durable=True)
